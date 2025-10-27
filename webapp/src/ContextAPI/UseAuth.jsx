@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import AuthContext from './AuthContext'; // Sửa tên AuthContent thành AuthContext
+import AuthContext from './AuthContext'; 
 
 export default function useAuth() {
     const context = useContext(AuthContext);

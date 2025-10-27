@@ -1,5 +1,5 @@
 import { useState } from "react";
-import useAuth from "../ContextAPI/UseAuth"; // Đảm bảo bạn đã sửa import này (không có dấu {})
+import useAuth from "../ContextAPI/UseAuth"; 
 
 export default function GreetingSection() {
   const { user } = useAuth();

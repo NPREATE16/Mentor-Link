@@ -9,7 +9,7 @@ import useAuth from "../ContextAPI/UseAuth"
 
 export default function HomePage() {
   // 3. Lấy thông tin user
-  const { user } = useAuth()
+  const { user } = useAuth();  
 
   return (
     <div className="min-h-screen bg-white">
@@ -19,10 +19,8 @@ export default function HomePage() {
         
        
         {user && (
-          user.role === 'student' ? <FeatureGrid /> : <TutorFeatureGrid />
+          user.type === 'Student' ? <FeatureGrid /> : <TutorFeatureGrid />
         )}
-       
-
       </main>
     </div>
   )

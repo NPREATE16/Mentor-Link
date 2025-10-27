@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Link } from "react-router-dom"
 import * as z from "zod"
 import useAuth from "../ContextAPI/UseAuth"
+import { Signin } from "../Utils/userUtil"
 
 const signinSchema = z.object({
   email: z
@@ -35,26 +36,23 @@ export default function SignIn() {
   const { signIn } = useAuth()
   const onSubmit = async (data) => {
     try {
-      const res = await fetch("http://localhost:3000/api/signin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: data.email,
-          password: data.password,
-        }),
-      })
-      const result = await res.json()
+      const res = await Signin(data.email, data.password);
 
-      if (res.ok && result.token) {
-        signIn(result.token)
-      } else {
-        setServerMessage({
-          type: "error",
-          text: result.message || result.error || "Sign-in failed. Please check your email and password.",
-        })
+      if (res.errors && res.errors.length) {
+        setServerMessage({ type: 'error', text: res.errors[0].message || 'Đăng nhập không thành công.' });
+        return;
       }
-    } catch {
-      setServerMessage({ type: "error", text: "Could not connect to the server. Please try again later." })
+
+      const signin = res.data && res.data.signin;
+      if (signin && signin.token) {
+        setServerMessage({ type: 'success', text: 'Đăng nhập thành công!' });
+        signIn(signin.token);
+      } else {
+        setServerMessage({ type: 'error', text: 'Đăng nhập không thành công.' });
+      }
+    } catch (err) {
+      console.error('Signup error', err);
+      setServerMessage({ type: 'error', text: 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.' });
     }
   }
 
@@ -93,9 +91,8 @@ export default function SignIn() {
             <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-6">
               {serverMsg && (
                 <div
-                  className={`p-3 text-sm rounded-lg ${
-                    serverMsg.type === "success" ? "text-green-700 bg-green-100" : "text-red-700 bg-red-100"
-                  }`}
+                  className={`p-3 text-sm rounded-lg ${serverMsg.type === "success" ? "text-green-700 bg-green-100" : "text-red-700 bg-red-100"
+                    }`}
                   role="alert"
                 >
                   {serverMsg.text}
@@ -198,7 +195,7 @@ export default function SignIn() {
           </div>
         </div>
       </div>
-      
+
     </div>
   )
 }

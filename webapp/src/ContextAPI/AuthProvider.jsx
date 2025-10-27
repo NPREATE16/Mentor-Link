@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; 
+import { useNavigate } from 'react-router-dom';
 import AuthContext from './AuthContext';
 
 function decodeJwtPayload(token) {
@@ -17,24 +17,28 @@ function decodeJwtPayload(token) {
 export default function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const navigate = useNavigate();
+    const [isLoading, setIsLoading] = useState(true);
+
 
     useEffect(() => {
         const token = localStorage.getItem("token");
         if (token) {
             try {
-                const payload = decodeJwtPayload(token); 
-                setUser( payload );
+                const payload = decodeJwtPayload(token);
+                setUser(payload);
             } catch {
                 localStorage.removeItem("token");
             }
         }
+        
+        setIsLoading(false);
     }, []);
 
     const signIn = (token) => {
         try {
             localStorage.setItem("token", token);
-            const payload = decodeJwtPayload(token); 
-            setUser( payload );
+            const payload = decodeJwtPayload(token);
+            setUser(payload);
             navigate('/HomePage');
         } catch {
             localStorage.removeItem("token");
@@ -49,7 +53,7 @@ export default function AuthProvider({ children }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, signIn, signOut, setUser }}>
+        <AuthContext.Provider value={{ user, signIn, signOut, setUser, isLoading }}>
             {children}
         </AuthContext.Provider>
     );
