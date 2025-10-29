@@ -20,11 +20,13 @@ A web platform to modernize and manage the Tutor/Mentor program at Ho Chi Minh C
 
 ### How to run project
 1. Create .env file in `webserver`, type:
+```
 zDB_HOST=trolley.proxy.rlwy.net
 DB_PORT=48989
 DB_PASSWORD=MOPhJPjciaqKufVlIuEvOzecJJLnAgqS
 DB_DATABASE=railway
 DB_USER=root
+```
 3. Open first terminal, type:
 ```
 cd webserver
