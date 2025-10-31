@@ -1,3 +1,4 @@
+import { email } from 'zod';
 import { graphQLRequest } from './request';
 
 export const Signup = async (name, email, password, type) => {
@@ -27,6 +28,22 @@ export const Signup = async (name, email, password, type) => {
     return data;
 }
 
+export const findUser = async (email) => {
+    const query  = `
+        query Query($email: String!) {
+            checkExistUser(email: $email)
+        }
+    `;
+
+    const data = graphQLRequest({ 
+        query, 
+        variables: {
+            email : email,
+        }
+    }); 
+    return data;
+}
+
 export const Signin = async (email, password) => {
     const query = `
         mutation Signin($email: String!, $password: String!) {
@@ -47,6 +64,42 @@ export const Signin = async (email, password) => {
         variables: {
             email: email, 
             password: password,
+        }
+    });
+
+    return data;
+}
+
+export const requestOtp = async (email) => {
+    const query = `
+        mutation RequestOtp($email: String!) {
+            requestOtp(email: $email) {
+                expiresAt
+                success
+            }
+        }
+    `;
+
+    const data = graphQLRequest({
+        query, 
+        variables: {email: email}
+    });
+    return data;
+}
+
+export const verifyOtp = async (email, code) => {
+    const query = `
+    mutation VerifyOtp($email: String!, $code: String!) {
+        verifyOtp(email: $email, code: $code) {
+            success
+        }
+    }`;
+
+    const data = graphQLRequest({
+        query, 
+        variables: {
+            email: email, 
+            code: code,
         }
     });
 

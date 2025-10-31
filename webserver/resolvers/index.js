@@ -1,14 +1,17 @@
 import { findUserByEmail, createUser } from '../models/userModel.js';
 import jwt from 'jsonwebtoken';
 import { UserInputError } from 'apollo-server-errors';
+import { deleteOtp, generateOtp, getOtp, getOtpCount, sendEmailOtp, setOtp } from '../MailSender/otpVerify.js';
+
+const OTP_RATE_LIMIT = 100;
 
 export const resolvers = {
   Mutation: {
     signup: async (_, { name, email, password, type }) => {
-      const exists = await findUserByEmail(email);
-      if (exists) {
-        throw new UserInputError('Tài khoản đã tồn tại', { field: 'email' });
-      }
+      // const exists = await findUserByEmail(email);
+      // if (exists) {
+      //   throw new UserInputError('Tài khoản đã tồn tại', { field: 'email' });
+      // }
 
       const bcrypt = await import('bcryptjs');
       const hashedPassword = await bcrypt.hash(password, 10);
@@ -42,7 +45,7 @@ export const resolvers = {
       const valid = await bcrypt.compare(password, user.Password);
       if (!valid) throw new UserInputError('Mật khẩu không đúng');
 
-  const payload = { id: user.UserID, email: user.Email, type: user.Role, name: user.FullName };
+      const payload = { id: user.UserID, email: user.Email, type: user.Role, name: user.FullName };
       const secret = process.env.JWT_SECRET || 'default_secret';
       const token = jwt.sign(payload, secret, { expiresIn: '4h' });
 
@@ -56,9 +59,49 @@ export const resolvers = {
           email: user.Email,
         }
       };
+    },
+
+    requestOtp: async (_, args) => {
+      try {
+        if (getOtpCount() >= Number(OTP_RATE_LIMIT)) {
+          throw new UserInputError('Vui lòng thử lại sau');
+        }
+
+        const code = generateOtp();
+        const expire = Date.now() + 2 * 60 * 1000
+        setOtp(args.email, code, expire);
+
+        await sendEmailOtp(args.email, code);
+
+        return { success: true, expiresAt: expire };
+      } catch (err) {
+        console.error("requestOtp error:", err);
+        return { success: false };
+      }
+    },
+
+    verifyOtp: async (_, { email, code }) => {
+      try {
+        const otp = getOtp(email); 
+        if (!otp) {
+          throw new UserInputError('Mã xác thực đã hết hạn');
+        }
+
+        if (otp.otp !== code) throw new UserInputError('Mã xác thực không chính xác');
+
+        deleteOtp(email);
+        return { success: true }
+      } catch (err) {
+        console.log("verify error", err);
+        return { success: false }
+      }
     }
   },
+
   Query: {
-    _empty: () => 'ok'
+    checkExistUser: async (_, args) => {
+      const exists = await findUserByEmail(args.email);
+      return !!exists;
+    }
   }
-};
+};  

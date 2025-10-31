@@ -1,12 +1,12 @@
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Link } from "react-router-dom" // (useNavigate vẫn được dùng ở đây, nhưng không dùng trong onSubmit)
+import { Link } from "react-router-dom"
 import * as z from "zod"
-import useAuth from "../ContextAPI/UseAuth" 
-import { Signup } from "../Utils/userUtil"
+import useAuth from "../ContextAPI/UseAuth"
+import { findUser, Signup, verifyOtp } from "../Utils/userUtil"
+import OTPModal from "../Components/ui/otpModal"
 
-// (Schema... giữ nguyên)
 const signupSchema = z
   .object({
     username: z.string()
@@ -39,10 +39,41 @@ export default function SignUp() {
   const [serverMessage, setServerMessage] = useState(null)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  
-  // Mặc dù useNavigate có thể không dùng, nhưng để an toàn cứ giữ lại
-  //const navigate = useNavigate() 
-  
+  const [otpOpen, setOtpOpen] = useState(false)
+  const [otpEmail, setOtpEmail] = useState('')
+  const [pendingData, setPendingData] = useState(null);
+
+  const handleVerifyOtp = async (code) => {
+    const res = await verifyOtp(otpEmail, code.trim());
+    console.log("handleverifyres", res);
+    const is_success = !!res?.data?.verifyOtp?.success;
+
+    if (res.errors && res.errors.length) {
+      throw new Error(res.errors[0].message)
+    }
+
+    console.log("is success", is_success);
+    if (!is_success) { throw new Error("Mã xác thực không chính xác") }
+
+    if (pendingData) {
+      const signupRes = await Signup(pendingData.username, pendingData.email, pendingData.password, pendingData.role);
+      if (signupRes.errors && signupRes.errors.length) {
+        throw new Error(signupRes.errors[0].message || 'Đăng ký thất bại');
+      }
+
+      const signup = signupRes.data && signupRes.data.signup;
+      if (signup && signup.token) {
+        setServerMessage({ type: 'success', text: 'Đăng ký thành công!' });
+        signIn(signup.token); 
+      } else {
+        setServerMessage({ type: 'success', text: 'Xác thực thành công. Vui lòng đăng nhập.' });
+      }
+    } else {
+      setServerMessage({ type: 'success', text: 'Xác thực thành công.' });
+    }
+
+    setPendingData(null);
+  }
 
   const {
     register,
@@ -58,21 +89,23 @@ export default function SignUp() {
   const selectedrole = watch("role")
   const { signIn } = useAuth()
 
-  const onSubmit = async (data) => {
-    console.log("data", data);
+  const storeUser = async (data) => {
+    let res = null
     try {
-      const res = await Signup(data.username, data.email, data.password, data.role);
+      res = await Signup(data.username, data.email, data.password, data.role);
       console.log('res', res);
 
       if (res.errors && res.errors.length) {
         setServerMessage({ type: 'error', text: res.errors[0].message || 'Đăng ký không thành công.' });
-        return;
+        return res;
       }
 
       const signup = res.data && res.data.signup;
       if (signup && signup.token) {
         setServerMessage({ type: 'success', text: 'Đăng ký thành công!' });
         signIn(signup.token);
+      } else if (signup && signup.user) {
+        setServerMessage({ type: 'success', text: 'Vui lòng xác thực mã OTP được gửi tới email.' });
       } else {
         setServerMessage({ type: 'error', text: 'Đăng ký không thành công.' });
       }
@@ -80,12 +113,30 @@ export default function SignUp() {
       console.error('Signup error', err);
       setServerMessage({ type: 'error', text: 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.' });
     }
+    return res
+  }
+
+  const onSubmit = async (data) => {
+    try {
+      const res = findUser(data.email);
+      if (!res) {
+        setServerMessage({ type: 'error', text: 'Tài khoản đã tồn tại' });
+        return;
+      }
+
+      setPendingData(data);
+      setOtpEmail(data.email);
+      setOtpOpen(true);
+
+    } catch (err) {
+      console.error('Signup error', err);
+      setServerMessage({ type: 'error', text: 'Vui lòng thử lại sau.' });
+    }
+
   }
 
   return (
-    // ... (Toàn bộ phần JSX của bạn giữ nguyên, nó không có lỗi)
     <div className="flex min-h-screen bg-white">
-      {/* (Phần code bên trái màu đen) */}
       <div className="hidden md:flex md:w-2/3 bg-black text-white flex-col justify-between p-12">
         <div>
           <h1 className="text-2xl font-bold">MentorLink</h1>
@@ -105,16 +156,14 @@ export default function SignUp() {
         </div>
       </div>
 
-      {/* (Phần code form bên phải) */}
       <div className="w-full md:w-1/3 flex items-center justify-center p-6">
         <div className="w-full max-w-md">
           <div className="mb-8">
             <h2 className="text-3xl font-bold text-center text-black">Đăng ký</h2>
             <p className="text-center text-gray-600 text-sm mt-2">Tạo tài khoản mới để bắt đầu</p>
           </div>
-          
+
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            {/* (Tất cả các input field và button giữ nguyên) */}
             <div>
               <label htmlFor="username" className="block text-sm font-semibold text-black mb-2">
                 Tên đăng nhập
@@ -256,6 +305,8 @@ export default function SignUp() {
           </form>
         </div>
       </div>
+      <OTPModal open={otpOpen} onOpenChange={setOtpOpen} email={otpEmail} onVerify={handleVerifyOtp} />
     </div>
   )
 }
+

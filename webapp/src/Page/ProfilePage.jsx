@@ -3,7 +3,6 @@ import Header from '../Components/header';
 import Button from '../Components/ui/button';
 
 export default function ProfilePage() {
-	// Mock data demo
 	const [profile, setProfile] = useState({
 		userId: 1,
 		mssv: '2352888',
