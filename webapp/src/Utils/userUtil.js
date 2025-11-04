@@ -1,4 +1,3 @@
-import { email } from 'zod';
 import { graphQLRequest } from './request';
 
 export const Signup = async (name, email, password, type) => {

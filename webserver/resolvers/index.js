@@ -8,10 +8,6 @@ const OTP_RATE_LIMIT = 100;
 export const resolvers = {
   Mutation: {
     signup: async (_, { name, email, password, type }) => {
-      // const exists = await findUserByEmail(email);
-      // if (exists) {
-      //   throw new UserInputError('Tài khoản đã tồn tại', { field: 'email' });
-      // }
 
       const bcrypt = await import('bcryptjs');
       const hashedPassword = await bcrypt.hash(password, 10);
@@ -25,7 +21,7 @@ export const resolvers = {
         type
       };
 
-      const payload = { id: insertId, email, type, name };
+      const payload = { id: insertId, email: email, type: type, name: name };
       const secret = process.env.JWT_SECRET || 'default_secret';
       const token = jwt.sign(payload, secret, { expiresIn: '4h' });
 
