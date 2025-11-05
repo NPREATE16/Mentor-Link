@@ -4,17 +4,31 @@ import Button from '../Components/ui/button';
 
 export default function ProfilePage() {
 	// Mock data demo
-	const [profile, setProfile] = useState({
-		userId: 1,
-		mssv: '2352888',
-		fullname: 'Phat_Stu',
-		email: 'phatstu@gmail.com',
-		phone: '0912345678',
-		faculty: 'Khoa học máy tính',
-		major: 'Công nghệ phần mềm',
-		description: 'Sinh viên năng động, có kỹ năng lập trình web, teamwork tốt.',
-		role: 'Student',
-	});
+		const facultyOptions = [
+	    'KHOA ĐIỆN - ĐIỆN TỬ',
+	    'KHOA KỸ THUẬT XÂY DỰNG',
+	    'KHOA CƠ KHÍ',
+	    'KHOA KỸ THUẬT HOÁ HỌC',
+	    'KHOA KHOA HỌC VÀ KỸ THUẬT MÁY ΤÍΝΗ',
+	    'KHOA CÔNG NGHỆ VẬT LIỆU',
+	    'KHOA KHOA HỌC ỨNG DỤNG',
+	    'KHOA KỸ THUẬT GIAO THÔNG',
+	    'KHOA QUẢN LÝ CÔNG NGHIỆP',
+	    'KHOA KỸ THUẬT ĐỊA CHẤT VÀ DẦU KHÍ',
+	    'KHOA MÔI TRƯỜNG VÀ TÀI NGUYÊN',
+	  ];
+
+		const [profile, setProfile] = useState({
+			userId: 1,
+			mssv: '2352888',
+			fullname: 'Phat_Stu',
+			email: 'phatstu@gmail.com',
+			phone: '0912345678',
+			faculty: 'KHOA KHOA HỌC VÀ KỸ THUẬT MÁY ΤÍΝΗ',
+			major: 'Công nghệ phần mềm',
+			description: 'Sinh viên năng động, có kỹ năng lập trình web, teamwork tốt.',
+			role: 'Student',
+		});
 
 	const [editMode, setEditMode] = useState(false);
 	const [editData, setEditData] = useState({
@@ -145,16 +159,21 @@ export default function ProfilePage() {
 										className="border border-gray-300 rounded px-2 py-1 w-2/3 text-gray-900"
 									/>
 								</div>
-								<div className="flex justify-between items-center">
-									<span className="text-gray-500 font-medium">Khoa</span>
-									<input
-										type="text"
-										name="faculty"
-										value={editData.faculty}
-										onChange={handleEditChange}
-										className="border border-gray-300 rounded px-2 py-1 w-2/3 text-gray-900"
-									/>
-								</div>
+								   <div className="flex justify-between items-center">
+									   <span className="text-gray-500 font-medium">Khoa</span>
+									   <select
+										   name="faculty"
+										   value={editData.faculty}
+										   onChange={handleEditChange}
+										   className="border border-gray-300 rounded px-2 py-1 w-2/3 text-gray-900"
+										   required
+									   >
+										   <option value="" disabled>Chọn khoa</option>
+										   {facultyOptions.map((faculty) => (
+											   <option key={faculty} value={faculty}>{faculty}</option>
+										   ))}
+									   </select>
+								   </div>
 								{profile.role === 'Tutor' && (
 									<div className="flex justify-between items-center">
 										<span className="text-gray-500 font-medium">Chuyên môn</span>

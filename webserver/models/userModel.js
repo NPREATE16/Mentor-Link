@@ -2,7 +2,6 @@ import dbPool from '../database.js';
 
 export async function findUserByEmail(email) {
   const [rows] = await dbPool.execute('SELECT * FROM User WHERE Email = ?', [email]);  
-   console.log("ROWS", rows[0]);
   return rows && rows.length ? rows[0] : null;
 }
 
