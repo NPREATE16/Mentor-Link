@@ -2,7 +2,7 @@ import HomePage from "./Page/HomePage"
 import SignIn from "./Page/SignIn"
 import SignUp from "./Page/SignUp"
 import ProfilePage from "./Page/ProfilePage"
-
+import Student_CourseRegistration from "./Page/Student_CourseRegistration"
 import AuthProvider from "./ContextAPI/AuthProvider"
 // 1. Import ProtectedRoute
 import ProtectedRoute from "./ContextAPI/ProtectedRoute"
@@ -38,6 +38,14 @@ function App() {
                 <ProfilePage />
               </ProtectedRoute>
             } 
+          />
+          <Route 
+            path="/CourseRegistration" 
+            element={
+            <ProtectedRoute>
+            <Student_CourseRegistration />
+            </ProtectedRoute>
+            }
           />
         </Routes>
       </AuthProvider>
