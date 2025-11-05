@@ -1,9 +1,18 @@
+import { useNavigate } from "react-router-dom";
 export default function FeatureCard({ icon, title, description }) {
+   const navigate = useNavigate();
+   const handleClick = () => {
+    if (title === "Đăng ký môn học") {
+      navigate("/DangKyMon");
+    } 
+    // 👉 Bạn có thể thêm các điều hướng khác ở đây
+    // else if (title === "Tìm & Ghép cặp Tutor") navigate("/GhepCap");
+    // else if (title === "Quản lý lịch") navigate("/Lich");
+  };
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow">
+    <div onClick={handleClick} className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow">
       
       {/* BẮT ĐẦU SỬA */}
-
       {/* 1. Thêm div này để làm nền đen, bo góc (rounded-lg) 
              và căn icon ra giữa (flex, items-center, justify-center)
       */}

@@ -16,5 +16,11 @@
     "email": "kiettok23@gmail.com",
     "password": "12345678@An",
     "role": "tutor"
+  },
+  {
+    "name": "tien.manhat2005",
+    "email": "tien.manhat2005@gmail.com",
+    "password": "Tien.manhat2005@gmail.com",
+    "role": "student"
   }
 ]

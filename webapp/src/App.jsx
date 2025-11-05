@@ -6,7 +6,7 @@ import ProfilePage from "./Page/ProfilePage"
 import AuthProvider from "./ContextAPI/AuthProvider"
 // 1. Import ProtectedRoute
 import ProtectedRoute from "./ContextAPI/ProtectedRoute"
-
+import RegisterCoursePage from "./Page/RegisterCoursePage"
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom"
 
 function App() {
@@ -36,6 +36,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <ProfilePage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/DangKyMon" 
+            element={
+              <ProtectedRoute>
+                <RegisterCoursePage />
               </ProtectedRoute>
             } 
           />
