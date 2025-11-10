@@ -8,7 +8,6 @@ const otpStore = {};
 
 export const setOtp = (email, otp, expire ) => {
   otpStore[email] = { otp, expire };
-  console.log("otps", otpStore);
 };
 
 export const getOtp = (email) => otpStore[email];

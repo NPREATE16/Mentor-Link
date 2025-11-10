@@ -10,7 +10,6 @@ export default function Student_CourseRegistration() {
       <div className="max-w-7xl mx-auto py-8 px-6">
         <h1 className="text-3xl font-bold text-center mb-6">Đăng ký môn học</h1>
 
-        {/* Ô tìm kiếm */}
         <div className="flex justify-center mb-8">
           <input
             type="text"
@@ -26,3 +25,5 @@ export default function Student_CourseRegistration() {
     </div>
   )
 }
+
+

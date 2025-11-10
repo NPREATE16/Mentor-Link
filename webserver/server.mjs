@@ -9,6 +9,8 @@ import dotenv from 'dotenv';
 import dbPool from './database.js';
 import { resolvers } from './resolvers/index.js';
 import { typeDefs } from './schemas/index.js'
+import jwt from 'jsonwebtoken';
+
 
 dotenv.config();
 
@@ -34,7 +36,34 @@ async function start() {
 
         await server.start();
 
-        app.use('/graphql', cors(), bodyParser.json(), expressMiddleware(server));
+        const authorizationJWT = async (req, res, next) => {
+            const authorizationHeader = req.headers.authorization;
+            if (!authorizationHeader) return next();
+
+            const accessToken = authorizationHeader.split(' ')[1];
+
+            try {
+                const decoded = jwt.verify(accessToken, process.env.JWT_SECRET);
+                res.locals.userId = decoded.id;
+                next();
+            } catch (err) {
+                console.log({ err });
+                return res.status(403).json({ message: 'Forbidden', error: err });
+            }
+        };
+
+        app.use(
+            '/graphql',
+            cors(),
+            authorizationJWT,
+            bodyParser.json(),
+            expressMiddleware(server, {
+                context: async ({ req, res }) => {
+                    return { userId: res.locals.userId };
+                },
+            })
+        );
+
         await new Promise((resolve, reject) => {
             httpServer.listen(PORT, (err) => {
                 if (err) return reject(err);

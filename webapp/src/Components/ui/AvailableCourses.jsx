@@ -1,4 +1,9 @@
 import React from "react";
+import { enrollCourse, getCourse } from "../../Utils/courseUtil";
+
+  // const res = await enrollCourse(courseid);  ///đăng kí kháo học courseid lấy từ các course
+  // const data = await getCourse();     //// lấy dũ liệu các khóa học 
+
 
 export default function AvailableCourses() {
   const courses = [
