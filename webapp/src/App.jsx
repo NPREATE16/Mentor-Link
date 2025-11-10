@@ -43,7 +43,7 @@ function App() {
             path="/CourseRegistration" 
             element={
             <ProtectedRoute>
-            <Student_CourseRegistration />
+            <RegisterCoursePage />
             </ProtectedRoute>
             }
           />
