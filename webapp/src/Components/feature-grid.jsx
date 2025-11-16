@@ -1,11 +1,12 @@
 import FeatureCard from "./feature-card.jsx"
-
+import { Link } from "react-router-dom" 
 const features = [
   {
     id: 1,
     icon: "/note.svg", 
     title: "Đăng ký môn học",
     description: "Tìm và đăng ký các môn học",
+    link: "/CourseRegistration"
   },
   {
     id: 2,
@@ -44,7 +45,19 @@ export default function FeatureGrid() {
     <section className="py-12">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {features.map((feature) => (
-          <FeatureCard key={feature.id} {...feature} />
+          feature.link ? (
+            // ✅ Card có link → bọc bằng Link
+            <Link 
+              to={feature.link} 
+              key={feature.id} 
+              style={{ textDecoration: "none", color: "inherit" }}
+            >
+              <FeatureCard {...feature} />
+            </Link>
+          ) : (
+            // ✅ Card không có link → giữ nguyên
+            <FeatureCard key={feature.id} {...feature} />
+          )
         ))}
       </div>
     </section>

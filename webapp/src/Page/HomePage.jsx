@@ -15,7 +15,7 @@ export default function HomePage() {
         <GreetingSection />
         
         {user && (
-          ((user.type || '').toLowerCase() === 'student') ? <FeatureGrid /> : <TutorFeatureGrid />
+          user.type === 'Tutor' ? <TutorFeatureGrid /> : <FeatureGrid />
         )}
       </main>
     </div>

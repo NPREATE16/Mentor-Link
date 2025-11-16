@@ -3,32 +3,31 @@ import Header from '../Components/header';
 import Button from '../Components/ui/button';
 
 export default function ProfilePage() {
-	// Mock data demo
-		const facultyOptions = [
-	    'KHOA ĐIỆN - ĐIỆN TỬ',
-	    'KHOA KỸ THUẬT XÂY DỰNG',
-	    'KHOA CƠ KHÍ',
-	    'KHOA KỸ THUẬT HOÁ HỌC',
-	    'KHOA KHOA HỌC VÀ KỸ THUẬT MÁY ΤÍΝΗ',
-	    'KHOA CÔNG NGHỆ VẬT LIỆU',
-	    'KHOA KHOA HỌC ỨNG DỤNG',
-	    'KHOA KỸ THUẬT GIAO THÔNG',
-	    'KHOA QUẢN LÝ CÔNG NGHIỆP',
-	    'KHOA KỸ THUẬT ĐỊA CHẤT VÀ DẦU KHÍ',
-	    'KHOA MÔI TRƯỜNG VÀ TÀI NGUYÊN',
-	  ];
+	const facultyOptions = [
+		'KHOA ĐIỆN - ĐIỆN TỬ',
+		'KHOA KỸ THUẬT XÂY DỰNG',
+		'KHOA CƠ KHÍ',
+		'KHOA KỸ THUẬT HOÁ HỌC',
+		'KHOA KHOA HỌC VÀ KỸ THUẬT MÁY ΤÍΝΗ',
+		'KHOA CÔNG NGHỆ VẬT LIỆU',
+		'KHOA KHOA HỌC ỨNG DỤNG',
+		'KHOA KỸ THUẬT GIAO THÔNG',
+		'KHOA QUẢN LÝ CÔNG NGHIỆP',
+		'KHOA KỸ THUẬT ĐỊA CHẤT VÀ DẦU KHÍ',
+		'KHOA MÔI TRƯỜNG VÀ TÀI NGUYÊN',
+	];
 
-		const [profile, setProfile] = useState({
-			userId: 1,
-			mssv: '2352888',
-			fullname: 'Phat_Stu',
-			email: 'phatstu@gmail.com',
-			phone: '0912345678',
-			faculty: 'KHOA KHOA HỌC VÀ KỸ THUẬT MÁY ΤÍΝΗ',
-			major: 'Công nghệ phần mềm',
-			description: 'Sinh viên năng động, có kỹ năng lập trình web, teamwork tốt.',
-			role: 'Student',
-		});
+	const [profile, setProfile] = useState({
+		userId: 1,
+		mssv: '2352888',
+		fullname: 'Phat_Stu',
+		email: 'phatstu@gmail.com',
+		phone: '0912345678',
+		faculty: 'KHOA KHOA HỌC VÀ KỸ THUẬT MÁY ΤÍΝΗ',
+		major: 'Công nghệ phần mềm',
+		description: 'Sinh viên năng động, có kỹ năng lập trình web, teamwork tốt.',
+		role: 'Student',
+	});
 
 	const [editMode, setEditMode] = useState(false);
 	const [editData, setEditData] = useState({
@@ -76,20 +75,20 @@ export default function ProfilePage() {
 		<div className="min-h-screen bg-gray-50">
 			<Header />
 			<main className="flex flex-col items-center justify-center py-12 px-4">
-				   <div className="w-full max-w-3xl bg-white rounded-2xl border border-gray-200 shadow p-0 flex flex-row items-stretch">
-					   {/* Left: Avatar & Name */}
-					   <div className="flex flex-col items-center justify-center w-1/3 py-10 px-6">
-						   <img
-							   src="/profile_icon.svg"
-							   alt="Avatar"
-							   className="w-24 h-24 rounded-full border-4 border-gray-200 bg-gray-100 object-cover mb-4"
-						   />
-						   <h2 className="text-xl font-bold mb-1 text-center">{profile.fullname}</h2>
-						   <p className="text-gray-500 text-center">{profile.role}</p>
-					   </div>
-					   {/* Divider */}
-					   <div className="w-px bg-gray-300 my-8" />
-					   {/* Right: Info & Edit */}
+				<div className="w-full max-w-3xl bg-white rounded-2xl border border-gray-200 shadow p-0 flex flex-row items-stretch">
+					{/* Left: Avatar & Name */}
+					<div className="flex flex-col items-center justify-center w-1/3 py-10 px-6">
+						<img
+							src="/profile_icon.svg"
+							alt="Avatar"
+							className="w-24 h-24 rounded-full border-4 border-gray-200 bg-gray-100 object-cover mb-4"
+						/>
+						<h2 className="text-xl font-bold mb-1 text-center">{profile.fullname}</h2>
+						<p className="text-gray-500 text-center">{profile.role}</p>
+					</div>
+					{/* Divider */}
+					<div className="w-px bg-gray-300 my-8" />
+					{/* Right: Info & Edit */}
 					<div className="flex-1 flex flex-col justify-center px-8 py-10">
 						<h3 className="text-2xl font-bold mb-2">Hồ sơ cá nhân</h3>
 						<p className="text-gray-500 mb-6">Thông tin tài khoản Mentor-Link</p>
@@ -159,21 +158,21 @@ export default function ProfilePage() {
 										className="border border-gray-300 rounded px-2 py-1 w-2/3 text-gray-900"
 									/>
 								</div>
-								   <div className="flex justify-between items-center">
-									   <span className="text-gray-500 font-medium">Khoa</span>
-									   <select
-										   name="faculty"
-										   value={editData.faculty}
-										   onChange={handleEditChange}
-										   className="border border-gray-300 rounded px-2 py-1 w-2/3 text-gray-900"
-										   required
-									   >
-										   <option value="" disabled>Chọn khoa</option>
-										   {facultyOptions.map((faculty) => (
-											   <option key={faculty} value={faculty}>{faculty}</option>
-										   ))}
-									   </select>
-								   </div>
+								<div className="flex justify-between items-center">
+									<span className="text-gray-500 font-medium">Khoa</span>
+									<select
+										name="faculty"
+										value={editData.faculty}
+										onChange={handleEditChange}
+										className="border border-gray-300 rounded px-2 py-1 w-2/3 text-gray-900"
+										required
+									>
+										<option value="" disabled>Chọn khoa</option>
+										{facultyOptions.map((faculty) => (
+											<option key={faculty} value={faculty}>{faculty}</option>
+										))}
+									</select>
+								</div>
 								{profile.role === 'Tutor' && (
 									<div className="flex justify-between items-center">
 										<span className="text-gray-500 font-medium">Chuyên môn</span>
@@ -217,7 +216,7 @@ export default function ProfilePage() {
 							</form>
 						)}
 					</div>
-				   </div>
+				</div>
 			</main>
 		</div>
 	);

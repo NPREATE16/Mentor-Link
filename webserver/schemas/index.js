@@ -21,14 +21,22 @@ export const typeDefs = `#graphql
     success: Boolean!
   }
 
+  type Course {
+    id: String! 
+    name: String!
+    faculty: String!
+  }
+
   type Mutation {
     signup(name: String!, email: String!, password: String!, type: String!): AuthPayload
     signin(email: String!, password: String!): AuthPayload
     requestOtp(email: String!): RequestOtpResult!
     verifyOtp(email: String!, code: String!): VerifyOtpResult!
+    enrollCourse(id: String!): Boolean!
   }
 
   type Query {
     checkExistUser(email: String! ): Boolean!
+    getCourse: [Course!]!
   }
 `;

@@ -10,7 +10,7 @@ export const graphQLRequest = async (payload, options = {}) => {
 
   const token = localStorage.getItem('token');
   if (token) headers.Authorization = `Bearer ${token}`;
-  console.log(headers.Authorization);
+  // console.log(headers.Authorization);
   const res = await fetch(GRAPHQL_SERVER, {
     method: 'POST',
     headers,

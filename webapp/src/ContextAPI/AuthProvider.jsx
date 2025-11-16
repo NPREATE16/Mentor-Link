@@ -37,8 +37,8 @@ export default function AuthProvider({ children }) {
     const signIn = (token) => {
         try {
             localStorage.setItem("token", token);
-            const payload = decodeJwtPayload(token);     console.log("payload", payload);
-            setUser(payload);
+            const payload = decodeJwtPayload(token);    
+            setUser(payload);        
             navigate('/HomePage');
         } catch {
             localStorage.removeItem("token");
