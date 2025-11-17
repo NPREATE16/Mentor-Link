@@ -1,4 +1,4 @@
-import { findUserByEmail, createUser } from '../models/userModel.js';
+import { findUserByEmail, findUserById, createUser, _updateUser } from '../models/userModel.js';
 import jwt from 'jsonwebtoken';
 import { UserInputError } from 'apollo-server-errors';
 import { deleteOtp, generateOtp, getOtp, getOtpCount, sendEmailOtp, setOtp } from '../MailSender/otpVerify.js';
@@ -153,8 +153,32 @@ export const resolvers = {
                 if (err instanceof UserInputError) throw err;
                 return false;
             }
-        }
-    },
+        },
+		
+		updateUser: async (_, { id, email, full_name, phone }) => {
+			try
+			{
+				// Tìm user trong DB
+				const user = await findUserById(id);
+				if (!user) return null;
+				await _updateUser({ id, email, full_name, phone });
+				// Trả về dữ liệu mới
+				const updatedUser = await findUserById(id);
+				return {
+					id: updatedUser.UserID,
+					name: updatedUser.FullName,
+					email: updatedUser.Email,
+					phone: updatedUser.Phone,
+					type: updatedUser.Role
+				};
+			}
+			catch (err)
+			{
+				console.error('updateUser error:', err);
+				throw new Error('Lỗi khi cập nhật dữ liệu user.');
+			}
+		},
+	},
 
     Query: {
         checkExistUser: async (_, args) => {
@@ -217,6 +241,24 @@ export const resolvers = {
                 console.error("get registered courses error", err);
                 return [];
             }
-        }
+        },
+
+        getUserByEmail: async (_, { email }) => {
+            try {
+                const user = await findUserByEmail(email);
+                if (!user) return null; // không tìm thấy
+  
+                return {
+                    id: user.UserID,       
+                    email: user.Email,     
+                    name: user.FullName || "-",   
+                    phone: user.Phone,     
+                    type: user.Type || "Student",
+                };
+            } catch (err) {
+                console.error('getUserByEmail error:', err);
+                throw new Error('Lỗi khi lấy dữ liệu user.');
+            }
+        },
     }
-};
+}

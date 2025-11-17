@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Header from '../Components/header';
 import Button from '../Components/ui/button';
+import useAuth from "../ContextAPI/UseAuth";
+import { fetchUserData, updateUserData } from "../Utils/userUtil.js";
 
 export default function ProfilePage() {
 	const facultyOptions = [
@@ -16,37 +18,48 @@ export default function ProfilePage() {
 		'KHOA KỸ THUẬT ĐỊA CHẤT VÀ DẦU KHÍ',
 		'KHOA MÔI TRƯỜNG VÀ TÀI NGUYÊN',
 	];
+	
+	const { user } = useAuth();
 
 	const [profile, setProfile] = useState({
-		userId: 1,
+		userId: user.id,
 		mssv: '2352888',
-		fullname: 'Phat_Stu',
-		email: 'phatstu@gmail.com',
-		phone: '0912345678',
+		fullname: "-", // async => update later.
+		email: user.email,
+		phone: user.phone,
 		faculty: 'KHOA KHOA HỌC VÀ KỸ THUẬT MÁY ΤÍΝΗ',
 		major: 'Công nghệ phần mềm',
 		description: 'Sinh viên năng động, có kỹ năng lập trình web, teamwork tốt.',
-		role: 'Student',
+		type: user.type,
 	});
 
 	const [editMode, setEditMode] = useState(false);
 	const [editData, setEditData] = useState({
-		email: profile.email,
-		phone: profile.phone,
-		faculty: profile.faculty,
-		major: profile.major,
-		description: profile.description,
+		if (profile) {
+			setEditData({ ...profile });
+		}
 	});
+	
+	useEffect(() => {
+		const fetchProfile = async () => {
+			const user_data = await fetchUserData(user.email);
+			if (user_data) {
+				const data = {
+					fullname: user_data.name || "-",
+					phone: user_data.phone || "",
+				};
+				setProfile((prev) => ({ ...prev, ...data }));
+				setEditData((prev) => ({ ...prev, ...data }));
+			}
+		};
+		fetchProfile();
+	}, [user.email]);
 
 	const handleEditClick = () => {
-		setEditData({
-			email: profile.email,
-			phone: profile.phone,
-			faculty: profile.faculty,
-			major: profile.major,
-			description: profile.description,
-		});
-		setEditMode(true);
+		if (profile) {
+			setEditData({ ...profile });
+			setEditMode(true);
+		}
 	};
 
 	const handleEditChange = (e) => {
@@ -58,17 +71,27 @@ export default function ProfilePage() {
 		setEditMode(false);
 	};
 
-	const handleEditSave = (e) => {
+	const handleEditSave = async (e) => {
 		e.preventDefault();
-		setProfile((prev) => ({
-			...prev,
+		
+		// Gọi mutation
+		const updatedUser = await updateUserData({
+			id: user.id,
 			email: editData.email,
+			full_name: editData.fullname,
 			phone: editData.phone,
-			faculty: editData.faculty,
-			major: prev.role === 'Tutor' ? editData.major : prev.major,
-			description: editData.description,
-		}));
-		setEditMode(false);
+		});
+
+		if (updatedUser) {
+			setProfile((prev) => ({
+				...prev,
+				fullname: updatedUser.name,
+				phone: updatedUser.phone,
+				email: updatedUser.email,
+				type: updatedUser.type
+			}));
+			setEditMode(false);
+		}
 	};
 
 	return (

@@ -42,6 +42,12 @@ export const typeDefs = `#graphql
     verifyOtp(email: String!, code: String!): VerifyOtpResult!
     enrollCourse(id: String!): Boolean!
     cancelEnrollCourse(courseId: String!): Boolean!
+    updateUser(
+      id: ID!
+      email: String!
+      full_name: String
+      phone: String
+    ): User
   }
 
   type Query {
@@ -49,5 +55,6 @@ export const typeDefs = `#graphql
     getCourse: [Course!]!
     getAvailableCourses: [Course!]!
     getRegisteredCourses: [RegisteredCourse!]!
+    getUserByEmail(email: String!): User
   }
 `;
