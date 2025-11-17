@@ -27,16 +27,27 @@ export const typeDefs = `#graphql
     faculty: String!
   }
 
+  type RegisteredCourse {
+    id: String!
+    name: String!
+    faculty: String!
+    content: String
+    reference: String
+  }
+
   type Mutation {
     signup(name: String!, email: String!, password: String!, type: String!): AuthPayload
     signin(email: String!, password: String!): AuthPayload
     requestOtp(email: String!): RequestOtpResult!
     verifyOtp(email: String!, code: String!): VerifyOtpResult!
     enrollCourse(id: String!): Boolean!
+    cancelEnrollCourse(courseId: String!): Boolean!
   }
 
   type Query {
     checkExistUser(email: String! ): Boolean!
     getCourse: [Course!]!
+    getAvailableCourses: [Course!]!
+    getRegisteredCourses: [RegisteredCourse!]!
   }
 `;

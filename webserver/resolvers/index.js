@@ -2,7 +2,7 @@ import { findUserByEmail, createUser } from '../models/userModel.js';
 import jwt from 'jsonwebtoken';
 import { UserInputError } from 'apollo-server-errors';
 import { deleteOtp, generateOtp, getOtp, getOtpCount, sendEmailOtp, setOtp } from '../MailSender/otpVerify.js';
-import { enrollCourse, getCourse } from '../models/courseModel.js';
+import { enrollCourse, getCourse, getRegisteredCourses, getAvailableCourses, cancelEnrollCourse, courseExists, isCourseRegistered } from '../models/courseModel.js';
 
 const OTP_RATE_LIMIT = 100;
 
@@ -107,12 +107,49 @@ export const resolvers = {
             if (!context.userId) {
                 throw new UserInputError('Bạn cần đăng nhập để đăng ký khóa học');
             }
-            
+
             try {
-                const data = await enrollCourse(context.userId, id); 
+                const exists = await courseExists(id);
+                if (!exists) {
+                    throw new UserInputError('Môn học không tồn tại');
+                }
+
+                const already = await isCourseRegistered(context.userId, id);
+                if (already) {
+                    throw new UserInputError('Bạn đã đăng ký môn này');
+                }
+
+                await enrollCourse(context.userId, id); 
                 return true;
             } catch (err) { 
-                console.error("enroll course error", err); 
+                console.error("enroll course error", err);
+                if (err instanceof UserInputError) throw err;
+
+                // Map DB-specific errors to friendly messages
+                if (err.code === 'COURSE_NOT_FOUND') {
+                    throw new UserInputError('Môn học không tồn tại');
+                }
+                if (err.code === 'ALREADY_REGISTERED') {
+                    throw new UserInputError('Bạn đã đăng ký môn này');
+                }
+
+                return false;
+            }
+        },
+
+        cancelEnrollCourse: async (_, { courseId }, context) => {
+            if (!context.userId) {
+                throw new UserInputError('Bạn cần đăng nhập để hủy đăng ký khóa học');
+            }
+
+            try {
+                const result = await cancelEnrollCourse(context.userId, courseId);
+                if (!result) {
+                    throw new UserInputError('Không tìm thấy đăng ký này');
+                }
+                return true;
+            } catch (err) {
+                console.error("cancel enroll course error", err);
                 if (err instanceof UserInputError) throw err;
                 return false;
             }
@@ -130,6 +167,54 @@ export const resolvers = {
                 return courses || [];
             } catch(err) { 
                 console.error("get course error", err);
+                return [];
+            }
+        },
+
+        getAvailableCourses: async (_, args, context) => {
+            console.log('getAvailableCourses context:', context);
+            
+            if (!context.userId) {
+                console.warn('No userId found in context, returning mock data');
+                // Return mock data if not authenticated
+                try {
+                    const courses = await getAvailableCourses(1); // Default user ID for testing
+                    return courses || [];
+                } catch (err) {
+                    console.error("get available courses error", err);
+                    return [];
+                }
+            }
+
+            try {
+                const courses = await getAvailableCourses(context.userId);
+                return courses || [];
+            } catch (err) {
+                console.error("get available courses error", err);
+                return [];
+            }
+        },
+
+        getRegisteredCourses: async (_, args, context) => {
+            console.log('getRegisteredCourses context:', context);
+            
+            if (!context.userId) {
+                console.warn('No userId found in context, returning mock data');
+                // Return mock data if not authenticated
+                try {
+                    const courses = await getRegisteredCourses(1); // Default user ID for testing
+                    return courses || [];
+                } catch (err) {
+                    console.error("get registered courses error", err);
+                    return [];
+                }
+            }
+
+            try {
+                const courses = await getRegisteredCourses(context.userId);
+                return courses || [];
+            } catch (err) {
+                console.error("get registered courses error", err);
                 return [];
             }
         }
