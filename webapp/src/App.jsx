@@ -26,9 +26,9 @@ function App() {
           <Route 
             path="/HomePage" 
             element={
-              <ProtectedRoute>
+              
                 <HomePage />
-              </ProtectedRoute>
+              
             } 
           />
           <Route 

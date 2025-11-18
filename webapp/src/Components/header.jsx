@@ -32,7 +32,7 @@ export default function Header() {
       <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
         
         {/* Logo */}
-        <Link to="/" className="text-2xl font-bold hover:text-gray-300 transition">
+        <Link to="/HomePage" className="text-2xl font-bold hover:text-gray-300 transition">
           MentorLink
         </Link>
 

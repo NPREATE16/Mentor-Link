@@ -1,3 +1,4 @@
+
 import { ApolloServer } from '@apollo/server';
 import express from 'express';
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
@@ -31,7 +32,7 @@ async function start() {
             console.log("Database connected:", rows[0]);
         } catch (err) {
             console.error("Database connecting error:", err.message || err);
-            process.exit(1);
+            console.warn("⚠️ Database not available - will use mock data");
         }
 
         await server.start();

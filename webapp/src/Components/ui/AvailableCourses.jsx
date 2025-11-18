@@ -1,43 +1,36 @@
-import React from "react";
-import { enrollCourse, getCourse } from "../../Utils/courseUtil";
-
-  // const res = await enrollCourse(courseid);  ///đăng kí kháo học courseid lấy từ các course
-  // const data = await getCourse();     //// lấy dũ liệu các khóa học 
-
-
-export default function AvailableCourses() {
-  const courses = [
-    { code: "CO2003", name: "Cấu trúc dữ liệu và giải thuật", faculty: "Khoa Khoa học và Kỹ thuật Máy tính" },
-    { code: "MT1005", name: "Giải tích 2", faculty: "Khoa Khoa Học Ứng Dụng" },
-    { code: "CO1007", name: "Cấu trúc rời rạc", faculty: "Khoa Khoa học và Kỹ thuật Máy tính" },
-  ];
-
+// src/Components/AvailableCourses.jsx
+export default function AvailableCourses({ available, search, handleRegister }) {
   return (
-    <div className="w-full bg-white rounded-2xl shadow-md p-6">
-      <h2 className="text-2xl font-bold mb-4 text-center">Các môn học khả dụng</h2>
+    <div className="bg-white p-8 rounded-3xl shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
+      <h2 className="text-3xl font-bold text-center mt-8 mb-3 text-gray-900">
+        Các môn học khả dụng
+      </h2>
 
-      <div className="space-y-4">
-        {courses.map((course) => (
-          <div
-            key={course.code}
-            className="flex justify-between items-center p-4 bg-white rounded-xl shadow border border-gray-200 hover:shadow-lg transition"
-          >
-            <div>
-              <span className="text-xs font-semibold bg-gray-200 px-2 py-1 rounded">
-                {course.code}
-              </span>
-              <h3 className="text-lg font-semibold mt-1">{course.name}</h3>
-              <p className="text-sm text-gray-500">{course.faculty}</p>
-            </div>
-
-            <button
-              className="px-4 py-2 bg-green-200 text-green-700 rounded-xl font-medium hover:bg-green-300 transition"
-              onClick={() => alert(`Đã đăng ký môn: ${course.name}`)}
+      <div className="flex flex-col gap-5">
+        {available
+          .filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
+          .map((course) => (
+            <div
+              key={course.id}
+              className="border border-gray-200 rounded-2xl p-5 flex flex-col gap-2"
             >
-              Đăng ký
-            </button>
-          </div>
-        ))}
+              <div className="w-fit bg-black text-white text-xs font-semibold px-3 py-1 rounded-full mb-1">
+                {course.id}
+              </div>
+
+              <p className="text-gray-900 font-bold tracking-tight">{course.name}</p>
+              <p className="text-sm text-gray-500">{course.faculty}</p>
+
+              <div className="flex justify-end mt-2">
+                <button
+                  onClick={() => handleRegister(course)}
+                  className="bg-green-200 text-black font-bold px-10 py-1.5 text-sm rounded-full border border-green-400"
+                >
+                  Đăng ký
+                </button>
+              </div>
+            </div>
+          ))}
       </div>
     </div>
   );

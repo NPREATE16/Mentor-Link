@@ -21,7 +21,6 @@ A web platform to modernize and manage the Tutor/Mentor program at Ho Chi Minh C
 ### How to run project
 1. Create .env file in `webserver`, type:
 ```
-
 ```
 3. Open first terminal, type:
 ```
