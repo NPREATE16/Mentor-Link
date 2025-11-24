@@ -10,7 +10,7 @@ export function cn(...inputs) {
       if (!i) return [];
       if (typeof i === 'string') return [i];
       if (Array.isArray(i)) return i;
-      if (typeof i === 'object') return Object.entries(i).filter(([_, v]) => v).map(([k]) => k);
+      if (typeof i === 'object') return Object.entries(i).filter(([, v]) => v).map(([k]) => k);
       return [];
     })
     .join(' ');

@@ -89,32 +89,7 @@ export default function SignUp() {
   const selectedrole = watch("role")
   const { signIn } = useAuth()
 
-  const storeUser = async (data) => {
-    let res = null
-    try {
-      res = await Signup(data.username, data.email, data.password, data.role);
-      console.log('res', res);
-
-      if (res.errors && res.errors.length) {
-        setServerMessage({ type: 'error', text: res.errors[0].message || 'Đăng ký không thành công.' });
-        return res;
-      }
-
-      const signup = res.data && res.data.signup;
-      if (signup && signup.token) {
-        setServerMessage({ type: 'success', text: 'Đăng ký thành công!' });
-        signIn(signup.token);
-      } else if (signup && signup.user) {
-        setServerMessage({ type: 'success', text: 'Vui lòng xác thực mã OTP được gửi tới email.' });
-      } else {
-        setServerMessage({ type: 'error', text: 'Đăng ký không thành công.' });
-      }
-    } catch (err) {
-      console.error('Signup error', err);
-      setServerMessage({ type: 'error', text: 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.' });
-    }
-    return res
-  }
+  
 
   const onSubmit = async (data) => {
     try {

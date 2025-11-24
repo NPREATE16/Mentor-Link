@@ -3,8 +3,11 @@ export default function FeatureCard({ icon, title, description }) {
    const navigate = useNavigate();
    const handleClick = () => {
     if (title === "Đăng ký môn học") {
-      navigate("/DangKyMon");
+      navigate("/CourseRegistration");
     } 
+    if (title === "Tìm & Ghép cặp Tutor") {
+      navigate("/Find_Tutor");
+    }
     // 👉 Bạn có thể thêm các điều hướng khác ở đây
     // else if (title === "Tìm & Ghép cặp Tutor") navigate("/GhepCap");
     // else if (title === "Quản lý lịch") navigate("/Lich");
