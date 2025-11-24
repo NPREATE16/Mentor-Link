@@ -16,14 +16,11 @@ function App() {
       <AuthProvider>
         <Routes>
           {/* Các Route công khai */}
-
           <Route path="/" element={<SignIn />} />
           <Route path="/SignInPage" element={<SignIn />} />
           <Route path="/SignUpPage" element={<SignUp />} />
 
-          {/* Các Route được bảo vệ
-            Bọc các trang cần đăng nhập bằng ProtectedRoute 
-          */}
+          {/* Các Route được bảo vệ */}
           <Route 
             path="/HomePage" 
             element={
@@ -43,24 +40,32 @@ function App() {
           <Route 
             path="/CourseRegistration" 
             element={
-            <ProtectedRoute>
-            <Student_CourseRegistration />
-            </ProtectedRoute>
+              <ProtectedRoute>
+                <Student_CourseRegistration />
+              </ProtectedRoute>
             }
           />
+          
+          {/* --- ĐÃ SỬA ĐOẠN NÀY --- */}
           <Route 
             path="/TutorSchedule" 
             element={
-            <ProtectedRoute>
-            <TutorSchedule />
-           <Route 
-            path="/Find_Tutor" 
-            element={
-            <ProtectedRoute>
-            <Find_Tutor />
-            </ProtectedRoute>
+              <ProtectedRoute>
+                <TutorSchedule />
+              </ProtectedRoute>
             }
           />
+          
+          <Route 
+            path="/Find_Tutor" 
+            element={
+              <ProtectedRoute>
+                <Find_Tutor />
+              </ProtectedRoute>
+            }
+          />
+          
+
         </Routes>
       </AuthProvider>
     </Router>
