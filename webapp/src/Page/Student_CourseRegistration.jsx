@@ -1,70 +1,121 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "../Components/header";
 
 import AvailableCourses from "../Components/ui/AvailableCourses.jsx";
 import RegisteredCourses from "../Components/ui/RegisteredCourses.jsx";
+import { getAvailableCourses, getRegisteredCourses, enrollCourse, cancelEnrollCourse } from "../Utils/courseRequest.js";
+
+// Mock data for fallback
+const MOCK_AVAILABLE = [
+  { id: "C02003", name: "Cấu trúc dữ liệu và giải thuật", faculty: "Khoa Khoa học và Kỹ thuật Máy tính" },
+  { id: "M11005", name: "Giải tích 2", faculty: "Khoa Khoa Học Ứng Dụng" },
+  { id: "C01007", name: "Cấu trúc rời rạc", faculty: "Khoa Khoa học và Kỹ thuật Máy tính" },
+];
+
+const MOCK_REGISTERED = [
+  {
+    id: "C002011",
+    name: "Mô hình hóa toán học",
+    faculty: "Khoa Khoa học và Kỹ thuật Máy tính",
+    content: "Giới thiệu các mô hình toán học cơ bản ứng dụng trong kỹ thuật và khoa học máy tính.",
+    reference: "Nguyễn Văn A - Giáo trình Mô hình toán học, NXB Khoa học Tự nhiên, 2020.",
+  },
+];
 
 export default function Student_CourseRegistration() {
   const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState(null);
+  const [registered, setRegistered] = useState([]);
+  const [available, setAvailable] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const [registered, setRegistered] = useState([
-    {
-      id: "C002011",
-      name: "Mô hình hóa toán học",
-      faculty: "Khoa Khoa học và Kỹ thuật Máy tính",
-      content:
-        "Giới thiệu các mô hình toán học cơ bản ứng dụng trong kỹ thuật và khoa học máy tính.",
-      reference:
-        "Nguyễn Văn A - Giáo trình Mô hình toán học, NXB Khoa học Tự nhiên, 2020.",
-    },
-    {
-      id: "C007007",
-      name: "Kiến trúc máy tính",
-      faculty: "Khoa Khoa học và Kỹ thuật Máy tính",
-      content:
-        "Nghiên cứu cấu trúc và hoạt động của CPU, bộ nhớ, và các thành phần chính trong máy tính.",
-      reference:
-        "David Patterson & John Hennessy - Computer Organization and Design, Morgan Kaufmann, 2017.",
-    },
-    {
-      id: "M11007",
-      name: "Đại số tuyến tính",
-      faculty: "Khoa Khoa học Ứng Dụng",
-      content:
-        "Khái niệm ma trận, vector, không gian vector và ứng dụng trong giải hệ phương trình tuyến tính.",
-      reference: "Ngô Bảo Châu - Đại số tuyến tính cơ bản, NXB Giáo dục, 2015.",
-    },
-  ]);
+  useEffect(() => {
+    fetchCourses();
+  }, []);
 
-  const [available, setAvailable] = useState([
-    { id: "C02003", name: "Cấu trúc dữ liệu và giải thuật", faculty: "Khoa Khoa học và Kỹ thuật Máy tính" },
-    { id: "M11005", name: "Giải tích 2", faculty: "Khoa Khoa Học Ứng Dụng" },
-    { id: "C01007", name: "Cấu trúc rời rạc", faculty: "Khoa Khoa học và Kỹ thuật Máy tính" },
-  ]);
+  async function fetchCourses() {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('Fetching courses from backend...');
+      
+      const [availData, registeredData] = await Promise.all([
+        getAvailableCourses(),
+        getRegisteredCourses()
+      ]);
+      
+      console.log('Available courses:', availData);
+      console.log('Registered courses:', registeredData);
+      
+      // Use API data directly; empty array is valid (user enrolled all or has no registrations)
+      setAvailable(availData || []);
+      setRegistered(registeredData || []);
+    } catch (err) {
+      console.error("Error fetching courses:", err);
+      // Only use mock data if API fails completely
+      setAvailable(MOCK_AVAILABLE);
+      setRegistered(MOCK_REGISTERED);
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  const handleRegister = (course) => {
-    setRegistered([...registered, course]);
-    setAvailable(available.filter((c) => c.id !== course.id));
+  const handleRegister = async (course) => {
+    try {
+      await enrollCourse(course.id);
+      // Only update UI after API succeeds
+      setRegistered([...registered, course]);
+      setAvailable(available.filter((c) => c.id !== course.id));
+    } catch (err) {
+      console.error("Error registering course:", err);
+      setError(`Đăng ký môn ${course.name} thất bại. Vui lòng thử lại.`);
+    }
   };
 
-  const handleCancel = (course) => {
-    setAvailable([...available, course]);
-    setRegistered(registered.filter((c) => c.id !== course.id));
+  const handleCancel = async (course) => {
+    try {
+      await cancelEnrollCourse(course.id);
+      // Only update UI after API succeeds
+      setAvailable([...available, course]);
+      setRegistered(registered.filter((c) => c.id !== course.id));
+    } catch (err) {
+      console.error("Error canceling enrollment:", err);
+      setError(`Hủy đăng ký môn ${course.name} thất bại. Vui lòng thử lại.`);
+    }
   };
 
   const toggleDetail = (id) => {
     setExpandedId(expandedId === id ? null : id);
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header />
+        <div className="flex justify-center items-center h-96">
+          <p className="text-lg text-gray-500">Đang tải...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#FAFAFA]">
+    <div className="min-h-screen bg-white">
       <Header />
 
       <h1 className="text-3xl font-bold text-center mt-8 mb-3 text-gray-900">
         Đăng ký môn học
       </h1>
-
+      <p className="text-center text-sm text-gray-500 mb-6">Tìm kiếm và lựa chọn các môn học bạn cần hỗ trợ trong học kỳ này</p>
+      
+      {error && (
+        <div className="flex justify-center mb-6">
+          <div className="bg-red-100 border border-red-300 text-red-700 px-4 py-3 rounded">
+            {error}
+          </div>
+        </div>
+      )}
       {/* Search */}
       <div className="flex justify-center mb-12">
         <div className="relative w-1/2">

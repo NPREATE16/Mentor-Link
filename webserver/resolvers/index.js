@@ -143,10 +143,8 @@ export const resolvers = {
             }
 
             try {
-                const result = await cancelEnrollCourse(context.userId, courseId);
-                if (!result) {
-                    throw new UserInputError('Không tìm thấy đăng ký này');
-                }
+                await cancelEnrollCourse(context.userId, courseId);
+                // Return true whether record existed or not (idempotent)
                 return true;
             } catch (err) {
                 console.error("cancel enroll course error", err);

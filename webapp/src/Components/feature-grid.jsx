@@ -6,7 +6,6 @@ const features = [
     icon: "/note.svg", 
     title: "Đăng ký môn học",
     description: "Tìm và đăng ký các môn học",
-    link: "/CourseRegistration"
   },
   {
     id: 2,

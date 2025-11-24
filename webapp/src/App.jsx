@@ -8,6 +8,7 @@ import AuthProvider from "./ContextAPI/AuthProvider"
 import ProtectedRoute from "./ContextAPI/ProtectedRoute"
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom"
+import Find_Tutor from "./Page/Find_turtor"
 
 function App() {
   return (
@@ -26,9 +27,9 @@ function App() {
           <Route 
             path="/HomePage" 
             element={
-              
+              <ProtectedRoute>
                 <HomePage />
-              
+              </ProtectedRoute>
             } 
           />
           <Route 
@@ -44,6 +45,14 @@ function App() {
             element={
             <ProtectedRoute>
             <Student_CourseRegistration />
+            </ProtectedRoute>
+            }
+          />
+           <Route 
+            path="/Find_Tutor" 
+            element={
+            <ProtectedRoute>
+            <Find_Tutor />
             </ProtectedRoute>
             }
           />
