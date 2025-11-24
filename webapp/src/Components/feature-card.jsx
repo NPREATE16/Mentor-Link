@@ -8,6 +8,10 @@ export default function FeatureCard({ icon, title, description }) {
     if (title === "Tìm & Ghép cặp Tutor") {
       navigate("/Find_Tutor");
     }
+  
+  if (title === "Thiết lập Lịch dạy") {
+      navigate("/TutorSchedule");
+    }
     // 👉 Bạn có thể thêm các điều hướng khác ở đây
     // else if (title === "Tìm & Ghép cặp Tutor") navigate("/GhepCap");
     // else if (title === "Quản lý lịch") navigate("/Lich");
