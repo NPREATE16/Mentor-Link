@@ -311,8 +311,8 @@ export default function ProfilePage() {
 								</div>
 								{ (profile.type === 'tutor' || profile.type === 'Tutor') && (
 									<div className="flex flex-col gap-1">
-										<span className="text-gray-500 font-medium mb-1">Khóa học</span>
-										<div className="flex gap-2 items-center">
+										<div className="flex justify-between items-center">
+											<span className="text-gray-500 font-medium">Khóa học</span>
 											<select
 												name="major-select"
 												value=""
@@ -334,13 +334,15 @@ export default function ProfilePage() {
 													</option>
 												))}
 											</select>
-											<span className="ml-2 text-xs text-gray-400">(Chọn tối đa 3)</span>
 										</div>
-										<div className="flex flex-wrap gap-2 mt-2">
+										<div className="flex justify-end mt-1 w-full">
+											<span className="text-xs text-gray-400">(Chọn tối đa 3)</span>
+										</div>
+										<div className="flex flex-col gap-2 mt-2 items-end w-full">
 											{(editData.major ? editData.major.split(';').filter(Boolean) : []).map(code => {
 												const course = courseOptions.find(c => c.id === code);
 												return (
-													<span key={code} className="inline-flex items-center bg-gray-200 text-gray-800 rounded-full px-3 py-1 text-xs font-medium">
+													<span key={code} className="inline-flex items-center bg-gray-200 text-gray-800 rounded-full px-3 py-1 text-xs font-medium w-fit">
 														{course ? `${course.id} - ${course.name}` : code}
 														<button type="button" className="ml-2 text-gray-500 hover:text-red-600" onClick={() => {
 															const selected = editData.major.split(';').map(s => s.trim()).filter(Boolean).filter(c => c !== code);
