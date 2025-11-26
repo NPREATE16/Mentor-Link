@@ -1,9 +1,14 @@
+import { useState, useEffect } from "react";
+import { getRegisteredCourses } from "../../Utils/courseRequest";
+
 export default function CoursePairing({ selectedCourse, setSelectedCourse, setMode, searchQuery = "" }) {
-  const courses = [
-    { id: "CO2011", name: "Mô hình hóa toán học", dept: "Khoa KH&KT Máy tính" },
-    { id: "CO2007", name: "Kiến trúc máy tính", dept: "Khoa KH&KT Máy tính" },
-    { id: "MT1007", name: "Đại số tuyến tính", dept: "Khoa KH ứng dụng" }
-  ];
+  const [courses, setCourses] = useState([]);
+
+  useEffect(() => {
+    getRegisteredCourses()
+      .then((data) => setCourses(data.map(c => ({ id: c.id, name: c.name, dept: c.faculty }))))
+      .catch((err) => console.error("Error loading registered courses:", err));
+  }, []);
 
   const filteredCourses = courses.filter(course => 
     course.id.toLowerCase().includes(searchQuery.toLowerCase()) ||

@@ -7,15 +7,16 @@ import useAuth from "../ContextAPI/UseAuth"
 
 export default function HomePage() {
   const { user } = useAuth();  
+  console.log(user.type);
 
   return (
     <div className="min-h-screen bg-white">
       <Header />
       <main className="max-w-6xl mx-auto px-4 py-8">
         <GreetingSection />
-        
+
         {user && (
-          user.type === 'tutor' || 'Tutor' ? <TutorFeatureGrid /> : <FeatureGrid />
+          user.type === 'tutor' || user.type === 'Tutor'? <TutorFeatureGrid /> : <FeatureGrid />
         )}
       </main>
     </div>

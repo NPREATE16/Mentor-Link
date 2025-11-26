@@ -52,6 +52,9 @@ export const fetchUserData = async (email) => {
                 email
                 phone
                 type
+                introduce
+                mssv
+                major
             }
         }
     `;
@@ -76,6 +79,7 @@ export const Signin = async (email, password) => {
                 phone
                 name
                 type
+                introduce
                 }
             }
         }
@@ -134,17 +138,26 @@ export const updateUserData = async (userData) => {
       $email: String!
       $full_name: String
       $phone: String
+      $introduce: String
+      $mssv: String
+      $major: String
     ) {
       updateUser(
         id: $id
         email: $email
         full_name: $full_name
         phone: $phone
+        introduce: $introduce
+        mssv: $mssv
+        major: $major
       ) {
         id
         name
         email
         phone
+        introduce
+        mssv
+        major
         type
       }
     }

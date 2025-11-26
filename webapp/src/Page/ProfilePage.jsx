@@ -28,8 +28,8 @@ export default function ProfilePage() {
 		email: user.email,
 		phone: user.phone,
 		faculty: 'KHOA KHOA HỌC VÀ KỸ THUẬT MÁY ΤÍΝΗ',
-		major: 'Công nghệ phần mềm',
-		description: 'Sinh viên năng động, có kỹ năng lập trình web, teamwork tốt.',
+		major: user.major || '',
+		description: '',
 		type: user.type,
 	});
 
@@ -45,6 +45,9 @@ export default function ProfilePage() {
 				const data = {
 					fullname: user_data.name || "-",
 					phone: user_data.phone || "",
+					description: user_data.introduce || "",
+					mssv: user_data.mssv || "",
+					major: user_data.major || "",
 				};
 				setProfile((prev) => ({ ...prev, ...data }));
 				setEditData((prev) => ({ ...prev, ...data }));
@@ -73,13 +76,24 @@ export default function ProfilePage() {
 
 	const handleEditSave = async (e) => {
 		e.preventDefault();
-		// Gọi mutation
+		const studentMssv =
+			profile.type?.toLowerCase() === 'student'
+				? (mssvEditable ? editData.mssv : profile.mssv)
+				: null;
+
+		const tutorMajor =
+			profile.type?.toLowerCase() === 'tutor'
+				? editData.major
+				: null;
+
 		const updatedUser = await updateUserData({
 			id: user.id,
 			email: profile.email, // Email không cho sửa
 			full_name: editData.fullname,
 			phone: editData.phone,
-			mssv: mssvEditable ? editData.mssv : profile.mssv,
+			introduce: editData.description,
+			mssv: studentMssv,
+			major: tutorMajor,
 		});
 
 		if (updatedUser) {
@@ -88,11 +102,15 @@ export default function ProfilePage() {
 				fullname: updatedUser.name,
 				phone: updatedUser.phone,
 				email: updatedUser.email,
-				mssv: mssvEditable ? editData.mssv : prev.mssv,
-				type: updatedUser.type
+				mssv: updatedUser.mssv ?? prev.mssv,
+				type: updatedUser.type,
+				description: updatedUser.introduce || '',
+				major: updatedUser.major ?? prev.major,
 			}));
 			setEditMode(false);
-			setMssvEditable(false); // Sau khi lưu thì MSSV không cho sửa nữa
+			if (studentMssv) {
+				setMssvEditable(false); // Sau khi lưu thì MSSV không cho sửa nữa
+			}
 		}
 	};
 
@@ -124,10 +142,12 @@ export default function ProfilePage() {
 										<span className="text-gray-500 font-medium">UserID</span>
 										<span className="font-semibold text-gray-900">{profile.userId}</span>
 									</div>
-									<div className="flex justify-between items-center">
-										<span className="text-gray-500 font-medium">MSSV</span>
-										<span className="font-semibold text-gray-900">{profile.mssv}</span>
-									</div>
+									{(profile.type === 'student' || profile.type === 'Student') && (
+										<div className="flex justify-between items-center">
+											<span className="text-gray-500 font-medium">MSSV</span>
+											<span className="font-semibold text-gray-900">{profile.mssv || <span className='italic text-gray-400'>Chưa cập nhật</span>}</span>
+										</div>
+									)}
 									<div className="flex justify-between items-center">
 										<span className="text-gray-500 font-medium">Email</span>
 										<span className="font-semibold text-gray-900">{profile.email}</span>
@@ -140,7 +160,7 @@ export default function ProfilePage() {
 										<span className="text-gray-500 font-medium">Khoa</span>
 										<span className="font-semibold text-gray-900">{profile.faculty}</span>
 									</div>
-									{profile.type === 'tutor' && (
+									{(profile.type === 'tutor' || profile.type === 'Tutor') && (
 										<div className="flex justify-between items-center">
 											<span className="text-gray-500 font-medium">Chuyên môn</span>
 											<span className="font-semibold text-gray-900">{profile.major}</span>
@@ -172,19 +192,23 @@ export default function ProfilePage() {
 										className="border border-gray-300 rounded px-2 py-1 w-2/3 text-gray-400 bg-gray-100 cursor-not-allowed"
 									/>
 								</div>
-								<div className="flex justify-between items-center">
-									<span className="text-gray-500 font-medium">MSSV</span>
-									<input
-										type="text"
-										name="mssv"
-										value={mssvEditable ? editData.mssv || '' : profile.mssv}
-										onChange={handleEditChange}
-										className={`border border-gray-300 rounded px-2 py-1 w-2/3 ${!mssvEditable ? 'text-gray-400 bg-gray-100 cursor-not-allowed' : 'text-gray-900'}`}
-										required
-										disabled={!mssvEditable}
-										placeholder="Nhập MSSV lần đầu"
-									/>
-								</div>
+								{
+									(profile.type === 'student' || profile.type === 'Student') && (		
+									<div className="flex justify-between items-center">
+										<span className="text-gray-500 font-medium">MSSV</span>
+										<input
+											type="text"
+											name="mssv"
+											value={mssvEditable ? editData.mssv || '' : profile.mssv}
+											onChange={handleEditChange}
+											className={`border border-gray-300 rounded px-2 py-1 w-2/3 ${!mssvEditable ? 'text-gray-400 bg-gray-100 cursor-not-allowed' : 'text-gray-900'}`}
+											required
+											disabled={!mssvEditable}
+											placeholder="Nhập MSSV lần đầu"
+										/>
+									</div>
+									)
+								}	
 								<div className="flex justify-between items-center">
 									<span className="text-gray-500 font-medium">Email</span>
 									<input
@@ -221,7 +245,7 @@ export default function ProfilePage() {
 										))}
 									</select>
 								</div>
-								{profile.type === 'tutor' && (
+								{(profile.type === 'tutor' || profile.type === 'Tutor') && (
 									<div className="flex justify-between items-center">
 										<span className="text-gray-500 font-medium">Chuyên môn</span>
 										<input

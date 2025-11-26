@@ -26,13 +26,14 @@ export async function createUser({ name, email, password, role }) {
   return ID;
 }
 
-export async function _updateUser({ id, email, full_name, phone }) {
+export async function _updateUser({ id, email, full_name, phone, introduce }) {
   const [result] = await dbPool.execute(
-    `UPDATE User SET Email = ?, FullName = ?, Phone = ? WHERE UserID = ?`,
+    `UPDATE User SET Email = ?, FullName = ?, Phone = ?, Introduce = ? WHERE UserID = ?`,
     [
       email ?? "",
       full_name ?? "-",
       phone ?? null, // undefined can't be used
+      introduce ?? "Chưa cập nhật",
       id
     ]
   );
@@ -40,4 +41,46 @@ export async function _updateUser({ id, email, full_name, phone }) {
 }
 
 
+export async function getStudentInfoById(id) {
+  const [rows] = await dbPool.execute(
+    'SELECT StudentCode FROM Student WHERE StudentID = ?',
+    [id]
+  );
+  return rows && rows.length ? rows[0] : null;
+}
 
+export async function upsertStudentCode({ id, studentCode }) {
+  const normalized = String(studentCode ?? '').trim();
+  if (!normalized) {
+    return null;
+  }
+  const [result] = await dbPool.execute(
+    `INSERT INTO Student (StudentID, StudentCode)
+     VALUES (?, ?)
+     ON DUPLICATE KEY UPDATE StudentCode = VALUES(StudentCode)`,
+    [id, normalized]
+  );
+  return result;
+}
+
+export async function getTutorInfoById(id) {
+  const [rows] = await dbPool.execute(
+    'SELECT Major FROM Tutor WHERE TutorID = ?',
+    [id]
+  );
+  return rows && rows.length ? rows[0] : null;
+}
+
+export async function upsertTutorMajor({ id, major }) {
+  const normalized = String(major ?? '').trim();
+  if (!normalized) {
+    return null;
+  }
+  const [result] = await dbPool.execute(
+    `INSERT INTO Tutor (TutorID, Major)
+     VALUES (?, ?)
+     ON DUPLICATE KEY UPDATE Major = VALUES(Major)`,
+    [id, normalized]
+  );
+  return result;
+}

@@ -1,4 +1,4 @@
-import { findUserByEmail, findUserById, createUser, _updateUser } from '../models/userModel.js';
+import { findUserByEmail, findUserById, createUser, _updateUser, getStudentInfoById, upsertStudentCode, getTutorInfoById, upsertTutorMajor } from '../models/userModel.js';
 import jwt from 'jsonwebtoken';
 import { UserInputError } from 'apollo-server-errors';
 import { deleteOtp, generateOtp, getOtp, getOtpCount, sendEmailOtp, setOtp } from '../MailSender/otpVerify.js';
@@ -6,13 +6,13 @@ import { enrollCourse, getCourse, getRegisteredCourses, getAvailableCourses, can
 import { openClass, updateClass, deleteClass, getClassesByTutorId } from '../models/tutorModel.js';
 const OTP_RATE_LIMIT = 100;
 
-export function safeCompare(a, b) {
-    if (a.length !== b.length) return false;
-    for (let i = 0; i < a.length; i++) {
-        if (a[i] !== b[i]) return false;
-    }
-    return true;
-}
+// export function safeCompare(a, b) {
+//     if (a.length !== b.length) return false;
+//     for (let i = 0; i < a.length; i++) {
+//         if (a[i] !== b[i]) return false;
+//     }
+//     return true;
+// }
 export const resolvers = {
     Mutation: {
         signup: async (_, { name, email, password, type }) => {
@@ -25,7 +25,9 @@ export const resolvers = {
                 name,
                 email,
                 phone: null,
-                type
+                type,
+                mssv: null,
+                major: null,
             };
 
             const payload = { id: insertId, email: email, type: type, name: name };
@@ -48,6 +50,17 @@ export const resolvers = {
             const valid = await bcrypt.compare(password, user.Password);
             if (!valid) throw new UserInputError('Mật khẩu không đúng');
 
+            let studentCode = null;
+            let tutorMajor = null;
+            const normalizedRole = String(user.Role || '').toLowerCase();
+            if (normalizedRole === 'student') {
+                const studentInfo = await getStudentInfoById(user.UserID);
+                studentCode = studentInfo?.StudentCode || null;
+            } else if (normalizedRole === 'tutor') {
+                const tutorInfo = await getTutorInfoById(user.UserID);
+                tutorMajor = tutorInfo?.Major || null;
+            }
+
             const payload = { id: user.UserID, email: user.Email, type: user.Role, name: user.FullName };
             const secret = process.env.JWT_SECRET;
             const token = jwt.sign(payload, secret, { expiresIn: '4h' });
@@ -60,6 +73,8 @@ export const resolvers = {
                     type: user.Role,
                     phone: user.Phone,
                     email: user.Email,
+                    mssv: studentCode,
+                    major: tutorMajor,
                 }
             };
         },
@@ -161,20 +176,29 @@ export const resolvers = {
             }
         },
 
-        updateUser: async (_, { id, email, full_name, phone }) => {
+        updateUser: async (_, { id, email, full_name, phone, introduce, mssv, major }) => {
             try {
-                // Tìm user trong DB
                 const user = await findUserById(id);
                 if (!user) return null;
-                await _updateUser({ id, email, full_name, phone });
-                // Trả về dữ liệu mới
+                await _updateUser({ id, email, full_name, phone, introduce });
+                const role = String(user.Role || '').toLowerCase();
+                if (role === 'student' && typeof mssv !== 'undefined') {
+                    await upsertStudentCode({ id, studentCode: mssv });
+                } else if (role === 'tutor' && typeof major !== 'undefined') {
+                    await upsertTutorMajor({ id, major });
+                }
                 const updatedUser = await findUserById(id);
+                const studentInfo = role === 'student' ? await getStudentInfoById(id) : null;
+                const tutorInfo = role === 'tutor' ? await getTutorInfoById(id) : null;
                 return {
                     id: updatedUser.UserID,
                     name: updatedUser.FullName,
                     email: updatedUser.Email,
                     phone: updatedUser.Phone,
-                    type: updatedUser.Role
+                    type: updatedUser.Role,
+                    introduce: updatedUser.Introduce,
+                    mssv: studentInfo?.StudentCode || null,
+                    major: tutorInfo?.Major || null,
                 };
             }
             catch (err) {
@@ -300,13 +324,18 @@ export const resolvers = {
             try {
                 const user = await findUserByEmail(email);
                 if (!user) return null; // không tìm thấy
-
+                const role = String(user.Role || user.Type || '').toLowerCase();
+                const studentInfo = role === 'student' ? await getStudentInfoById(user.UserID) : null;
+                const tutorInfo = role === 'tutor' ? await getTutorInfoById(user.UserID) : null;
                 return {
                     id: user.UserID,
                     email: user.Email,
                     name: user.FullName || "-",
                     phone: user.Phone,
-                    type: user.Type || "Student",
+                    type: user.Type || user.Role || "Student",
+                    introduce: user.Introduce || "",
+                    mssv: studentInfo?.StudentCode || null,
+                    major: tutorInfo?.Major || null,
                 };
             } catch (err) {
                 console.error('getUserByEmail error:', err);
