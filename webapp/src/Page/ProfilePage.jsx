@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getCourse } from '../Utils/courseUtil';
 import Header from '../Components/header';
 import Button from '../Components/ui/button';
 import useAuth from "../ContextAPI/UseAuth";
@@ -33,6 +34,8 @@ export default function ProfilePage() {
 		type: user.type,
 	});
 
+	const [courseOptions, setCourseOptions] = useState([]);
+
 
 	const [editMode, setEditMode] = useState(false);
 	const [editData, setEditData] = useState({});
@@ -54,6 +57,10 @@ export default function ProfilePage() {
 			}
 		};
 		fetchProfile();
+		// Lấy danh sách môn học
+		getCourse().then(res => {
+			if (res && res.getCourse) setCourseOptions(res.getCourse);
+		});
 	}, [user.email]);
 
 	const handleEditClick = () => {
@@ -66,8 +73,14 @@ export default function ProfilePage() {
 	};
 
 	const handleEditChange = (e) => {
-		const { name, value } = e.target;
-		setEditData((prev) => ({ ...prev, [name]: value }));
+		const { name, value, options, type } = e.target;
+		if (name === 'major' && type === 'select-multiple') {
+			// Lấy các option được chọn
+			const selected = Array.from(options).filter(o => o.selected).map(o => o.value);
+			setEditData((prev) => ({ ...prev, [name]: selected.join(';') }));
+		} else {
+			setEditData((prev) => ({ ...prev, [name]: value }));
+		}
 	};
 
 	const handleEditCancel = () => {
@@ -88,29 +101,24 @@ export default function ProfilePage() {
 			alert('Số điện thoại phải gồm đúng 10 chữ số.');
 			return;
 		}
-				// Validate courses (1-3 course codes, each 6 chars, separated by ;) 
-				if ((profile.type?.toLowerCase() === 'tutor')) {
-					if (editData.major) {
-						// Tách các mã bằng dấu ;, loại bỏ khoảng trắng thừa
-						const codes = editData.major.split(';').map(s => s.trim()).filter(Boolean);
-						if (codes.length < 1 || codes.length > 3) {
-							alert('Bạn phải nhập từ 1 đến 3 mã môn học, ngăn cách nhau bằng dấu ;');
-							return;
-						}
-						if (codes.some(code => code.length !== 6)) {
-							alert('Mỗi mã môn học phải đúng 6 ký tự.');
-							return;
-						}
-						// 2 ký tự đầu là chữ, 4 ký tự sau là số
-						if (codes.some(code => !/^[A-Za-z]{2}\d{4}$/.test(code))) {
-							alert('Mã môn học phải có 2 ký tự đầu là chữ, 4 ký tự sau là số (VD: IT1234).');
-							return;
-						}
-					} else {
-						alert('Vui lòng nhập ít nhất 1 mã môn học.');
-						return;
-					}
+		// Validate courses (1-3 course codes, each 6 chars, separated by ;) 
+		if ((profile.type?.toLowerCase() === 'tutor')) {
+			if (editData.major) {
+				const codes = editData.major.split(';').map(s => s.trim()).filter(Boolean);
+				if (codes.length < 1 || codes.length > 3) {
+					alert('Bạn phải chọn từ 1 đến 3 môn học.');
+					return;
 				}
+				// Kiểm tra mã có trong danh sách courseOptions không
+				if (codes.some(code => !courseOptions.find(c => c.id === code))) {
+					alert('Có mã môn học không hợp lệ.');
+					return;
+				}
+			} else {
+				alert('Vui lòng chọn ít nhất 1 môn học.');
+				return;
+			}
+		}
 		// Validate description (max 1000 chars)
 		if (editData.description && editData.description.length > 1000) {
 			alert('Mô tả năng lực không được vượt quá 1000 ký tự.');
@@ -159,7 +167,7 @@ export default function ProfilePage() {
 		<div className="min-h-screen bg-gray-50">
 			<Header />
 			<main className="flex flex-col items-center justify-center py-12 px-4">
-				<div className="w-full max-w-3xl bg-white rounded-2xl border border-gray-200 shadow p-0 flex flex-row items-stretch">
+				<div className="w-full max-w-5xl bg-white rounded-2xl border border-gray-200 shadow p-0 flex flex-row items-stretch">
 					{/* Left: Avatar & Name */}
 					<div className="flex flex-col items-center justify-center w-1/3 py-10 px-6">
 						<img
@@ -301,18 +309,47 @@ export default function ProfilePage() {
 										))}
 									</select>
 								</div>
-								{(profile.type === 'tutor' || profile.type === 'Tutor') && (
-									<div className="flex justify-between items-center">
-										<span className="text-gray-500 font-medium">Khóa học</span>
-										<input
-											type="text"
-											name="major"
-											value={editData.major}
-											onChange={handleEditChange}
-											className="border border-gray-300 rounded px-2 py-1 w-2/3 text-gray-900"
-											maxLength={100}
-											placeholder="VD: IT1234;CS5678"
-										/>
+								{ (profile.type === 'tutor' || profile.type === 'Tutor') && (
+									<div className="flex flex-col gap-1">
+										<span className="text-gray-500 font-medium mb-1">Khóa học</span>
+										<div className="flex gap-2 items-center">
+											<select
+												name="major-select"
+												value=""
+												onChange={e => {
+													const val = e.target.value;
+													if (!val) return;
+													const selected = editData.major ? editData.major.split(';').map(s => s.trim()).filter(Boolean) : [];
+													if (!selected.includes(val) && selected.length < 3) {
+														setEditData(prev => ({ ...prev, major: [...selected, val].join(';') }));
+													}
+												}}
+												className="border border-gray-300 rounded px-2 py-1 w-2/3 text-gray-900"
+												required={!(editData.major && editData.major.split(';').filter(Boolean).length > 0)}
+											>
+												<option value="" disabled>Chọn môn...</option>
+												{courseOptions.filter(c => !(editData.major || '').split(';').includes(c.id)).map((course) => (
+													<option key={course.id} value={course.id}>
+														{course.id} - {course.name}
+													</option>
+												))}
+											</select>
+											<span className="ml-2 text-xs text-gray-400">(Chọn tối đa 3)</span>
+										</div>
+										<div className="flex flex-wrap gap-2 mt-2">
+											{(editData.major ? editData.major.split(';').filter(Boolean) : []).map(code => {
+												const course = courseOptions.find(c => c.id === code);
+												return (
+													<span key={code} className="inline-flex items-center bg-gray-200 text-gray-800 rounded-full px-3 py-1 text-xs font-medium">
+														{course ? `${course.id} - ${course.name}` : code}
+														<button type="button" className="ml-2 text-gray-500 hover:text-red-600" onClick={() => {
+															const selected = editData.major.split(';').map(s => s.trim()).filter(Boolean).filter(c => c !== code);
+															setEditData(prev => ({ ...prev, major: selected.join(';') }));
+														}}>&times;</button>
+													</span>
+												);
+											})}
+										</div>
 									</div>
 								)}
 								<div className="flex flex-col gap-1">
