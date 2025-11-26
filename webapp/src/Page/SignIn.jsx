@@ -26,6 +26,7 @@ export default function SignIn() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLocked, setIsLocked] = useState(false);
   const [lockTimeLeft, setLockTimeLeft] = useState(0);
+  const [attemptsLeft, setAttemptsLeft] = useState(5);
   const MAX_ATTEMPTS = 5;
   const LOCK_DURATION = 5 * 60 * 1000; // 5 phút
 
@@ -36,11 +37,17 @@ export default function SignIn() {
       setIsLocked(true);
       setLockTimeLeft(Math.ceil((lockInfo.lockedUntil - Date.now()) / 1000));
     }
+    setAttemptsLeft(MAX_ATTEMPTS - (lockInfo.attempts || 0));
   }, []);
 
   // Đếm ngược thời gian khóa liên tục
   useEffect(() => {
-    if (!isLocked) return;
+    if (!isLocked) {
+      // Cập nhật số lần còn lại khi hết khóa
+      const lockInfo = JSON.parse(localStorage.getItem('signin_lock') || '{}');
+      setAttemptsLeft(MAX_ATTEMPTS - (lockInfo.attempts || 0));
+      return;
+    }
     const interval = setInterval(() => {
       const lockInfo = JSON.parse(localStorage.getItem('signin_lock') || '{}');
       if (lockInfo.lockedUntil && Date.now() < lockInfo.lockedUntil) {
@@ -49,6 +56,7 @@ export default function SignIn() {
         setIsLocked(false);
         setLockTimeLeft(0);
         localStorage.removeItem('signin_lock');
+        setAttemptsLeft(MAX_ATTEMPTS);
       }
     }, 1000);
     return () => clearInterval(interval);
@@ -73,13 +81,14 @@ export default function SignIn() {
         let lockInfo = JSON.parse(localStorage.getItem('signin_lock') || '{}');
         if (!lockInfo.attempts) lockInfo.attempts = 0;
         lockInfo.attempts += 1;
+        setAttemptsLeft(MAX_ATTEMPTS - lockInfo.attempts);
         if (lockInfo.attempts >= MAX_ATTEMPTS) {
           lockInfo.lockedUntil = Date.now() + LOCK_DURATION;
           setIsLocked(true);
           setLockTimeLeft(Math.ceil(LOCK_DURATION / 1000));
           setServerMessage({ type: 'error', text: 'Bạn đã nhập sai quá 5 lần. Vui lòng thử lại sau 5 phút.' });
         } else {
-          setServerMessage({ type: 'error', text: res.errors[0].message || 'Đăng nhập không thành công.' });
+          setServerMessage({ type: 'error', text: `${res.errors[0].message || 'Đăng nhập không thành công.'} (${MAX_ATTEMPTS - lockInfo.attempts} lần thử còn lại)` });
         }
         localStorage.setItem('signin_lock', JSON.stringify(lockInfo));
         return;
@@ -89,6 +98,7 @@ export default function SignIn() {
       if (signin && signin.token) {
         setServerMessage({ type: 'success', text: 'Đăng nhập thành công!' });
         localStorage.removeItem('signin_lock');
+        setAttemptsLeft(MAX_ATTEMPTS);
         signIn(signin.token);
       } else {
         setServerMessage({ type: 'error', text: 'Đăng nhập không thành công.' });
@@ -218,6 +228,9 @@ export default function SignIn() {
                     )}
                   </button>
                 </div>
+                {!isLocked && attemptsLeft < MAX_ATTEMPTS && attemptsLeft > 0 && (
+                  <p className="mt-2 text-sm text-red-600">Còn {attemptsLeft} lần thử trước khi bị khóa đăng nhập.</p>
+                )}
                 {isLocked && (
                   <p className="mt-2 text-sm text-red-600">Bạn đã bị khóa đăng nhập. Vui lòng thử lại sau {Math.floor(lockTimeLeft/60)}:{(lockTimeLeft%60).toString().padStart(2,'0')} phút.</p>
                 )}
