@@ -76,6 +76,47 @@ export default function ProfilePage() {
 
 	const handleEditSave = async (e) => {
 		e.preventDefault();
+		// Validate MSSV (7 digits)
+		if ((profile.type?.toLowerCase() === 'student') && mssvEditable) {
+			if (!/^\d{7}$/.test(editData.mssv || '')) {
+				alert('MSSV phải gồm đúng 7 chữ số.');
+				return;
+			}
+		}
+		// Validate phone (10 digits)
+		if (editData.phone && !/^\d{10}$/.test(editData.phone)) {
+			alert('Số điện thoại phải gồm đúng 10 chữ số.');
+			return;
+		}
+				// Validate courses (1-3 course codes, each 6 chars, separated by ;) 
+				if ((profile.type?.toLowerCase() === 'tutor')) {
+					if (editData.major) {
+						// Tách các mã bằng dấu ;, loại bỏ khoảng trắng thừa
+						const codes = editData.major.split(';').map(s => s.trim()).filter(Boolean);
+						if (codes.length < 1 || codes.length > 3) {
+							alert('Bạn phải nhập từ 1 đến 3 mã môn học, ngăn cách nhau bằng dấu ;');
+							return;
+						}
+						if (codes.some(code => code.length !== 6)) {
+							alert('Mỗi mã môn học phải đúng 6 ký tự.');
+							return;
+						}
+						// 2 ký tự đầu là chữ, 4 ký tự sau là số
+						if (codes.some(code => !/^[A-Za-z]{2}\d{4}$/.test(code))) {
+							alert('Mã môn học phải có 2 ký tự đầu là chữ, 4 ký tự sau là số (VD: IT1234).');
+							return;
+						}
+					} else {
+						alert('Vui lòng nhập ít nhất 1 mã môn học.');
+						return;
+					}
+				}
+		// Validate description (max 1000 chars)
+		if (editData.description && editData.description.length > 1000) {
+			alert('Mô tả năng lực không được vượt quá 1000 ký tự.');
+			return;
+		}
+
 		const studentMssv =
 			profile.type?.toLowerCase() === 'student'
 				? (mssvEditable ? editData.mssv : profile.mssv)
@@ -162,8 +203,15 @@ export default function ProfilePage() {
 									</div>
 									{(profile.type === 'tutor' || profile.type === 'Tutor') && (
 										<div className="flex justify-between items-center">
-											<span className="text-gray-500 font-medium">Chuyên môn</span>
-											<span className="font-semibold text-gray-900">{profile.major}</span>
+											<span className="text-gray-500 font-medium">Khóa học</span>
+											<span className="font-semibold text-gray-900 flex flex-col items-end">
+												{profile.major
+													? profile.major.split(';').map((s, idx) => (
+														<span key={idx} className="block text-right">{s.trim()}</span>
+													))
+													: <span className='italic text-gray-400'>Chưa cập nhật</span>
+												}
+											</span>
 										</div>
 									)}
 									<div className="flex flex-col gap-1">
@@ -193,7 +241,7 @@ export default function ProfilePage() {
 									/>
 								</div>
 								{
-									(profile.type === 'student' || profile.type === 'Student') && (		
+									(profile.type === 'student' || profile.type === 'Student') && (      
 									<div className="flex justify-between items-center">
 										<span className="text-gray-500 font-medium">MSSV</span>
 										<input
@@ -205,10 +253,14 @@ export default function ProfilePage() {
 											required
 											disabled={!mssvEditable}
 											placeholder="Nhập MSSV lần đầu"
+											inputMode="numeric"
+											pattern="\d{7}"
+											maxLength={7}
+											minLength={7}
 										/>
 									</div>
 									)
-								}	
+								}   
 								<div className="flex justify-between items-center">
 									<span className="text-gray-500 font-medium">Email</span>
 									<input
@@ -228,6 +280,10 @@ export default function ProfilePage() {
 										value={editData.phone}
 										onChange={handleEditChange}
 										className="border border-gray-300 rounded px-2 py-1 w-2/3 text-gray-900"
+										inputMode="numeric"
+										pattern="\d{10}"
+										maxLength={10}
+										minLength={10}
 									/>
 								</div>
 								<div className="flex justify-between items-center">
@@ -247,13 +303,15 @@ export default function ProfilePage() {
 								</div>
 								{(profile.type === 'tutor' || profile.type === 'Tutor') && (
 									<div className="flex justify-between items-center">
-										<span className="text-gray-500 font-medium">Chuyên môn</span>
+										<span className="text-gray-500 font-medium">Khóa học</span>
 										<input
 											type="text"
 											name="major"
 											value={editData.major}
 											onChange={handleEditChange}
 											className="border border-gray-300 rounded px-2 py-1 w-2/3 text-gray-900"
+											maxLength={100}
+											placeholder="VD: IT1234;CS5678"
 										/>
 									</div>
 								)}
@@ -264,6 +322,7 @@ export default function ProfilePage() {
 										value={editData.description}
 										onChange={handleEditChange}
 										className="border border-gray-300 rounded px-2 py-1 w-full text-gray-900 min-h-[60px]"
+										maxLength={2000}
 									/>
 								</div>
 								<div className="flex gap-3 pt-2">
