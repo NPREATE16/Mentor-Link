@@ -27,40 +27,62 @@ export default function SignIn() {
   const [isLocked, setIsLocked] = useState(false);
   const [lockTimeLeft, setLockTimeLeft] = useState(0);
   const [attemptsLeft, setAttemptsLeft] = useState(5);
+  const [currentEmail, setCurrentEmail] = useState("");
   const MAX_ATTEMPTS = 5;
   const LOCK_DURATION = 5 * 60 * 1000; // 5 phút
 
   // Kiểm tra trạng thái khóa khi load trang
+  // Lấy email hiện tại trong input
   useEffect(() => {
-    const lockInfo = JSON.parse(localStorage.getItem('signin_lock') || '{}');
-    if (lockInfo.lockedUntil && Date.now() < lockInfo.lockedUntil) {
-      setIsLocked(true);
-      setLockTimeLeft(Math.ceil((lockInfo.lockedUntil - Date.now()) / 1000));
-    }
-    setAttemptsLeft(MAX_ATTEMPTS - (lockInfo.attempts || 0));
+    setCurrentEmail(document.getElementById('email')?.value || "");
+  }, []);
+
+  // Theo dõi thay đổi email input để cập nhật trạng thái khóa đúng email
+  useEffect(() => {
+    const handler = () => {
+      const email = document.getElementById('email')?.value || "";
+      setCurrentEmail(email);
+      const lockMap = JSON.parse(localStorage.getItem('signin_lock_map') || '{}');
+      const lockInfo = lockMap[email] || {};
+      if (lockInfo.lockedUntil && Date.now() < lockInfo.lockedUntil) {
+        setIsLocked(true);
+        setLockTimeLeft(Math.ceil((lockInfo.lockedUntil - Date.now()) / 1000));
+      } else {
+        setIsLocked(false);
+        setLockTimeLeft(0);
+      }
+      setAttemptsLeft(MAX_ATTEMPTS - (lockInfo.attempts || 0));
+    };
+    document.getElementById('email')?.addEventListener('input', handler);
+    handler();
+    return () => document.getElementById('email')?.removeEventListener('input', handler);
   }, []);
 
   // Đếm ngược thời gian khóa liên tục
   useEffect(() => {
+    if (!currentEmail) return;
     if (!isLocked) {
       // Cập nhật số lần còn lại khi hết khóa
-      const lockInfo = JSON.parse(localStorage.getItem('signin_lock') || '{}');
+      const lockMap = JSON.parse(localStorage.getItem('signin_lock_map') || '{}');
+      const lockInfo = lockMap[currentEmail] || {};
       setAttemptsLeft(MAX_ATTEMPTS - (lockInfo.attempts || 0));
       return;
     }
     const interval = setInterval(() => {
-      const lockInfo = JSON.parse(localStorage.getItem('signin_lock') || '{}');
+      const lockMap = JSON.parse(localStorage.getItem('signin_lock_map') || '{}');
+      const lockInfo = lockMap[currentEmail] || {};
       if (lockInfo.lockedUntil && Date.now() < lockInfo.lockedUntil) {
         setLockTimeLeft(Math.ceil((lockInfo.lockedUntil - Date.now()) / 1000));
       } else {
         setIsLocked(false);
         setLockTimeLeft(0);
-        localStorage.removeItem('signin_lock');
+        if (lockMap[currentEmail]) delete lockMap[currentEmail];
+        localStorage.setItem('signin_lock_map', JSON.stringify(lockMap));
         setAttemptsLeft(MAX_ATTEMPTS);
       }
     }, 1000);
     return () => clearInterval(interval);
-  }, [isLocked]);
+  }, [isLocked, currentEmail]);
 
   const {
     register,
@@ -72,13 +94,20 @@ export default function SignIn() {
   })
   const { signIn } = useAuth()
   const onSubmit = async (data) => {
-    if (isLocked) return;
+    if (!data.email) return;
+    // Lấy trạng thái khóa riêng cho email này
+    const lockMap = JSON.parse(localStorage.getItem('signin_lock_map') || '{}');
+    let lockInfo = lockMap[data.email] || {};
+    if (lockInfo.lockedUntil && Date.now() < lockInfo.lockedUntil) {
+      setIsLocked(true);
+      setLockTimeLeft(Math.ceil((lockInfo.lockedUntil - Date.now()) / 1000));
+      setAttemptsLeft(MAX_ATTEMPTS - (lockInfo.attempts || 0));
+      return;
+    }
     try {
       const res = await Signin(data.email, data.password);
 
       if (res.errors && res.errors.length) {
-        // Xử lý đếm số lần sai và khóa nếu vượt quá
-        let lockInfo = JSON.parse(localStorage.getItem('signin_lock') || '{}');
         if (!lockInfo.attempts) lockInfo.attempts = 0;
         lockInfo.attempts += 1;
         setAttemptsLeft(MAX_ATTEMPTS - lockInfo.attempts);
@@ -90,14 +119,16 @@ export default function SignIn() {
         } else {
           setServerMessage({ type: 'error', text: `${res.errors[0].message || 'Đăng nhập không thành công.'} (${MAX_ATTEMPTS - lockInfo.attempts} lần thử còn lại)` });
         }
-        localStorage.setItem('signin_lock', JSON.stringify(lockInfo));
+        lockMap[data.email] = lockInfo;
+        localStorage.setItem('signin_lock_map', JSON.stringify(lockMap));
         return;
       }
 
       const signin = res.data && res.data.signin;
       if (signin && signin.token) {
         setServerMessage({ type: 'success', text: 'Đăng nhập thành công!' });
-        localStorage.removeItem('signin_lock');
+        if (lockMap[data.email]) delete lockMap[data.email];
+        localStorage.setItem('signin_lock_map', JSON.stringify(lockMap));
         setAttemptsLeft(MAX_ATTEMPTS);
         signIn(signin.token);
       } else {
