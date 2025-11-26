@@ -24,6 +24,36 @@ const signinSchema = z.object({
 export default function SignIn() {
   const [serverMsg, setServerMessage] = useState(null)
   const [showPassword, setShowPassword] = useState(false)
+  const [isLocked, setIsLocked] = useState(false);
+  const [lockTimeLeft, setLockTimeLeft] = useState(0);
+  const MAX_ATTEMPTS = 5;
+  const LOCK_DURATION = 5 * 60 * 1000; // 5 phút
+
+  // Kiểm tra trạng thái khóa khi load trang
+  useState(() => {
+    const lockInfo = JSON.parse(localStorage.getItem('signin_lock') || '{}');
+    if (lockInfo.lockedUntil && Date.now() < lockInfo.lockedUntil) {
+      setIsLocked(true);
+      setLockTimeLeft(Math.ceil((lockInfo.lockedUntil - Date.now()) / 1000));
+    }
+  });
+
+  // Đếm ngược thời gian khóa
+  useState(() => {
+    if (!isLocked) return;
+    const interval = setInterval(() => {
+      const lockInfo = JSON.parse(localStorage.getItem('signin_lock') || '{}');
+      if (lockInfo.lockedUntil && Date.now() < lockInfo.lockedUntil) {
+        setLockTimeLeft(Math.ceil((lockInfo.lockedUntil - Date.now()) / 1000));
+      } else {
+        setIsLocked(false);
+        setLockTimeLeft(0);
+        localStorage.removeItem('signin_lock');
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isLocked]);
+
   const {
     register,
     handleSubmit,
@@ -34,17 +64,31 @@ export default function SignIn() {
   })
   const { signIn } = useAuth()
   const onSubmit = async (data) => {
+    if (isLocked) return;
     try {
       const res = await Signin(data.email, data.password);
 
       if (res.errors && res.errors.length) {
-        setServerMessage({ type: 'error', text: res.errors[0].message || 'Đăng nhập không thành công.' });
+        // Xử lý đếm số lần sai và khóa nếu vượt quá
+        let lockInfo = JSON.parse(localStorage.getItem('signin_lock') || '{}');
+        if (!lockInfo.attempts) lockInfo.attempts = 0;
+        lockInfo.attempts += 1;
+        if (lockInfo.attempts >= MAX_ATTEMPTS) {
+          lockInfo.lockedUntil = Date.now() + LOCK_DURATION;
+          setIsLocked(true);
+          setLockTimeLeft(Math.ceil(LOCK_DURATION / 1000));
+          setServerMessage({ type: 'error', text: 'Bạn đã nhập sai quá 5 lần. Vui lòng thử lại sau 5 phút.' });
+        } else {
+          setServerMessage({ type: 'error', text: res.errors[0].message || 'Đăng nhập không thành công.' });
+        }
+        localStorage.setItem('signin_lock', JSON.stringify(lockInfo));
         return;
       }
 
       const signin = res.data && res.data.signin;
       if (signin && signin.token) {
         setServerMessage({ type: 'success', text: 'Đăng nhập thành công!' });
+        localStorage.removeItem('signin_lock');
         signIn(signin.token);
       } else {
         setServerMessage({ type: 'error', text: 'Đăng nhập không thành công.' });
@@ -110,6 +154,7 @@ export default function SignIn() {
                     {...register("email")}
                     className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-black focus:border-black sm:text-sm ${errors.email ? "border-red-500" : "border-gray-300"}`}
                     placeholder="example@email.com"
+                    disabled={isLocked}
                   />
                 </div>
                 {errors.email && <p className="mt-2 text-sm text-red-600">{errors.email.message}</p>}
@@ -132,11 +177,13 @@ export default function SignIn() {
                     {...register("password")}
                     className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-black focus:border-black sm:text-sm ${errors.password ? "border-red-500" : "border-gray-300"}`}
                     placeholder="••••••••"
+                    disabled={isLocked}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700"
+                    tabIndex={-1}
                   >
                     {showPassword ? (
                       <svg
@@ -172,6 +219,9 @@ export default function SignIn() {
                     )}
                   </button>
                 </div>
+                {isLocked && (
+                  <p className="mt-2 text-sm text-red-600">Bạn đã bị khóa đăng nhập. Vui lòng thử lại sau {Math.floor(lockTimeLeft/60)}:{(lockTimeLeft%60).toString().padStart(2,'0')} phút.</p>
+                )}
                 {errors.password && <p className="mt-2 text-sm text-red-600">{errors.password.message}</p>}
               </div>
 
