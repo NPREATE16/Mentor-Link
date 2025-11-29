@@ -43,9 +43,9 @@ export default function Header() {
             <Link to="/HomePage" className="font-bold hover:text-gray-300 transition">
               Trang chủ
             </Link>
-            <a href="#" className="font-bold hover:text-gray-300 transition">
+             <Link to="/MyCourses" className="font-bold hover:text-gray-300 transition">
               Môn học
-            </a>
+            </Link>
             <a href="#" className="font-bold hover:text-gray-300 transition">
               Lịch học
             </a>

@@ -1,5 +1,18 @@
-export default function TutorDetail({ tutor, onBack, onConfirm, onCancel }) {
+import { useState } from 'react'
+
+export default function TutorDetail({ tutor, onBack, onConfirm }) {
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
   if (!tutor) return null;
+
+  const schedules = Array.isArray(tutor.schedules) && tutor.schedules.length >= 1
+    ? tutor.schedules.slice(0, 2)
+    : [
+      { id: 's1', label: 'Lịch A', day: 'Thứ 2, Thứ 4, Thứ 6', start: '19:00', end: '22:00' },
+      { id: 's2', label: 'Lịch B', day: 'Thứ 3, Thứ 5', start: '18:00', end: '20:00' }
+    ];
+
+  
 
   return (
     <div className="p-8 bg-white rounded-lg shadow-lg border border-gray-200">
@@ -35,17 +48,44 @@ export default function TutorDetail({ tutor, onBack, onConfirm, onCancel }) {
       </div>
 
       <div className="mt-6">
-        <h4 className="font-bold text-lg mb-3">Lịch rảnh</h4>
-        <div className="text-sm text-gray-600 space-y-2">
-          <div className="flex items-center gap-3"><span className="text-lg">📅</span> Thứ 2, thứ 4, thứ 6</div>
-          <div className="flex items-center gap-3"><span className="text-lg">⏰</span> 19:00 - 22:00</div>
-        </div>
+        <h4 className="font-bold text-lg mb-3">Lịch rảnh (Chọn một)</h4>
+        {/* use provided schedules or default to two sample options */}
+        {/** schedules is array of { id, label, day, start, end } */}
+        <ScheduleSelector schedules={schedules} selectedIndex={selectedIndex} onSelect={(idx) => setSelectedIndex(idx)} />
       </div>
 
       <div className="flex justify-end gap-3 mt-8">
         {onBack && <button className="px-5 py-2 rounded-full bg-red-200 text-red-700 font-medium text-sm" onClick={onBack}>Chọn lại</button>}
-        {onConfirm && <button className="px-5 py-2 rounded-full bg-green-200 text-green-700 font-medium text-sm" onClick={() => onConfirm(tutor)}>Đồng ý</button>}
+        {onConfirm && <button className="px-5 py-2 rounded-full bg-green-200 text-green-700 font-medium text-sm" onClick={() => onConfirm(tutor, schedules[selectedIndex])}>Đồng ý</button>}
       </div>
+    </div>
+  )
+}
+
+
+function ScheduleSelector({ schedules, selectedIndex, onSelect }) {
+  const handleClick = (idx) => {
+    onSelect(idx);
+  }
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {schedules.map((s, idx) => (
+        <button
+          key={s.id || idx}
+          type="button"
+          onClick={() => handleClick(idx)}
+          className={`w-full text-left p-3 border rounded-lg transition-shadow ${selectedIndex === idx ? 'border-green-400 shadow-md bg-green-50' : 'border-gray-200 hover:shadow-sm'}`}
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="font-semibold">{s.label || `Lịch ${idx + 1}`}</div>
+              <div className="text-sm text-gray-600 mt-1">{s.day}</div>
+            </div>
+            <div className="text-sm text-gray-700">{s.start} - {s.end}</div>
+          </div>
+        </button>
+      ))}
     </div>
   )
 }

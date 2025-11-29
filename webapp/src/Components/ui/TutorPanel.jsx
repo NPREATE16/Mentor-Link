@@ -11,9 +11,17 @@ export default function TutorPanel({ selectedCourse, mode, setMode }) {
   // manual: show list; clicking detail sets selectedTutor
   if (mode === 'manual') {
     if (selectedTutor) {
-      return (
+          return (
         <div className="tutor-panel">
-          <TutorDetail tutor={selectedTutor} onBack={() => setSelectedTutor(null)} onConfirm={() => {/* confirm action */}} />
+          <TutorDetail
+            tutor={selectedTutor}
+            onBack={() => setSelectedTutor(null)}
+            onConfirm={(tutor, schedule) => {
+              // very small UX: notify and close detail
+              alert(`Bạn đã chọn: ${tutor.name} — ${schedule.label} (${schedule.day} ${schedule.start}-${schedule.end})`)
+              setSelectedTutor(null)
+            }}
+          />
         </div>
       )
     }

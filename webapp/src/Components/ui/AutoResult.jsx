@@ -12,7 +12,14 @@ export default function AutoResult({ course, setMode }) {
   return (
     <div className="auto-result">
       <h2 className="text-center text-2xl font-bold mb-4">Kết quả ghép tự động</h2>
-      <TutorDetail tutor={tutor} onBack={() => setMode(null)} onConfirm={() => {/* confirm action */}} />
+      <TutorDetail
+        tutor={tutor}
+        onBack={() => setMode(null)}
+        onConfirm={(tutor, schedule) => {
+          alert(`Bạn đã chọn: ${tutor.name} — ${schedule.label} (${schedule.day} ${schedule.start}-${schedule.end})`)
+          setMode(null)
+        }}
+      />
     </div>
   )
 }
