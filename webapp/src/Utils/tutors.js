@@ -104,5 +104,35 @@ export async function getMyClasses() {
   return data.data?.getClassesByTutorID || [];
 }
 
+export async function deleteTutorCourseRegistration(courseId) {
+  const query = `
+    mutation DeleteTutorCourseRegistration($courseId: String!) {
+      deleteTutorCourseRegistration(courseId: $courseId)
+    }
+  `;
+  const data = await graphQLRequest({
+    query,
+    variables: {
+      courseId: courseId,
+    }
+  })
+  return data.data?.deleteTutorCourseRegistration === true;
+}
+
+export async function deleteMultipleTutorCourseRegistrations(courseIds) {
+  const query = `
+    mutation DeleteMultipleTutorCourseRegistrations($courseIds: [String!]!) {
+      deleteMultipleTutorCourseRegistrations(courseIds: $courseIds)
+    }
+  `;
+  const data = await graphQLRequest({
+    query,
+    variables: {
+      courseIds: courseIds,
+    }
+  })
+  return data.data?.deleteMultipleTutorCourseRegistrations === true;
+}
+
 // export default TUTORS;
 

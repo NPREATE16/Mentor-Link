@@ -1,10 +1,13 @@
 // src/Components/RegisteredCourses.jsx
+import { useNavigate } from 'react-router-dom';
+
 export default function RegisteredCourses({
   registered,
   expandedId,
   toggleDetail,
   handleCancel,
 }) {
+  const navigate = useNavigate();
   return (
     <div className="bg-white p-8 rounded-3xl shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
       <h2 className="text-3xl font-bold text-center mt-8 mb-3 text-gray-900">
@@ -52,7 +55,10 @@ export default function RegisteredCourses({
                 Hủy
               </button>
 
-              <button className="border border-green-500 text-green-700 bg-green-100 px-5 py-2 rounded-full font-medium hover:bg-green-100 transition">
+              <button 
+                onClick={() => navigate('/Find_Tutor', { state: { courseId: course.id, courseName: course.name } })}
+                className="border border-green-500 text-green-700 bg-green-100 px-5 py-2 rounded-full font-medium hover:bg-green-200 transition"
+              >
                 Tìm Tutor
               </button>
             </div>

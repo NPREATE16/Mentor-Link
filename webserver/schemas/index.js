@@ -67,6 +67,8 @@ export const typeDefs = `#graphql
     openClass(start: String!, end: String!, day: String!, method: String!): Class!
     deleteClass(classId: ID!): Boolean!
     updateClass(classId: ID!, start: String, end: String, day: String, method: String): Class
+    deleteTutorCourseRegistration(courseId: String!): Boolean!
+    deleteMultipleTutorCourseRegistrations(courseIds: [String!]!): Boolean!
   }
 
   type Query {

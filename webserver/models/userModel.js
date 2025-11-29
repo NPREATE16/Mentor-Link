@@ -15,7 +15,7 @@ export async function findUserById(id) {
 export async function createUser({ name, email, password, role }) {
   const seed = `${Date.now()}-${Math.random()}`;
   const hash = crypto.createHash("sha1").update(seed).digest("hex");
-  const num = parseInt(hash.slice(0, 8), 16) % 100000000; 
+  const num = parseInt(hash.slice(0, 8), 16) % 100000000;
   const ID = num.toString().padStart(8, "0");
 
   const [result] = await dbPool.execute(
@@ -64,23 +64,41 @@ export async function upsertStudentCode({ id, studentCode }) {
 }
 
 export async function getTutorInfoById(id) {
-  const [rows] = await dbPool.execute(
-    'SELECT Major FROM Tutor WHERE TutorID = ?',
+  const [courseRows] = await dbPool.execute(
+    'SELECT CourseID FROM TutorCourseRegistration WHERE UserID = ? ORDER BY CourseID',
     [id]
   );
-  return rows && rows.length ? rows[0] : null;
-}
 
-export async function upsertTutorMajor({ id, major }) {
-  const normalized = String(major ?? '').trim();
-  if (!normalized) {
+  if (!courseRows && courseRows.length < 1) {
     return null;
   }
-  const [result] = await dbPool.execute(
-    `INSERT INTO Tutor (TutorID, Major)
-     VALUES (?, ?)
-     ON DUPLICATE KEY UPDATE Major = VALUES(Major)`,
-    [id, normalized]
+  const codes = courseRows
+    .map((row) => String(row.CourseID || '').trim())
+    .filter(Boolean);
+  if (codes.length) {
+    return { Major: codes.join(';') };
+  }
+}
+
+export async function upsertTutorMajor({ tutorId, courseCodes }) {
+  const normalizedCodes = Array.from(
+    new Set(
+      (courseCodes ?? [])
+        .map((code) => String(code || '').trim())
+        .filter(Boolean)
+    )
   );
+
+  if (normalizedCodes.length < 1) return null;
+
+  const placeholders = normalizedCodes.map(() => '(?, ?)').join(', ');
+  const values = normalizedCodes.flatMap((code) => [tutorId, code]);
+  const [result] = await dbPool.execute(
+    `INSERT INTO TutorCourseRegistration (UserID, CourseID) VALUES ${placeholders}`,
+    values
+  );
+
   return result;
 }
+
+

@@ -4,6 +4,7 @@ import Header from '../Components/header';
 import Button from '../Components/ui/button';
 import useAuth from "../ContextAPI/UseAuth";
 import { fetchUserData, updateUserData } from "../Utils/userUtil.js";
+import { deleteMultipleTutorCourseRegistrations } from "../Utils/tutors.js";
 
 export default function ProfilePage() {
 	const facultyOptions = [
@@ -36,10 +37,12 @@ export default function ProfilePage() {
 
 	const [courseOptions, setCourseOptions] = useState([]);
 
-
 	const [editMode, setEditMode] = useState(false);
 	const [editData, setEditData] = useState({});
 	const [mssvEditable, setMssvEditable] = useState(true);
+
+	const [addedMajor, setaddedMajor] = useState([]); 
+	// const [deletedMajor, setdeletedMajor] = useState([]);
 	
 	useEffect(() => {
 		const fetchProfile = async () => {
@@ -67,6 +70,7 @@ export default function ProfilePage() {
 		if (profile) {
 			setEditData({ ...profile });
 			setEditMode(true);
+			setaddedMajor([]);
 			// Nếu đã có MSSV thì không cho sửa nữa
 			setMssvEditable(profile.mssv === '' || profile.mssv === undefined);
 		}
@@ -121,7 +125,7 @@ export default function ProfilePage() {
 		}
 		// Validate description (max 1000 chars)
 		if (editData.description && editData.description.length > 1000) {
-			alert('Mô tả năng lực không được vượt quá 1000 ký tự.');
+			alert('Mô tả năng lực không được vượt quá 255 ký tự.');
 			return;
 		}
 
@@ -130,9 +134,30 @@ export default function ProfilePage() {
 				? (mssvEditable ? editData.mssv : profile.mssv)
 				: null;
 
+		if (profile.type?.toLowerCase() === 'tutor') {
+			const originalCourses = profile.major
+				? profile.major.split(';').map(s => s.trim()).filter(Boolean)
+				: [];
+			const newCourses = editData.major
+				? editData.major.split(';').map(s => s.trim()).filter(Boolean)
+				: [];
+			
+			const deletedCourses = originalCourses.filter(code => !newCourses.includes(code));
+			
+			if (deletedCourses.length > 0) {
+				try {
+					await deleteMultipleTutorCourseRegistrations(deletedCourses);
+				} catch (err) {
+					console.error('Error deleting courses:', err);
+					alert('Xóa khóa học thất bại. Vui lòng thử lại.');
+					return;
+				}
+			}
+		}
+
 		const tutorMajor =
 			profile.type?.toLowerCase() === 'tutor'
-				? editData.major
+				? (addedMajor.length > 0 ? addedMajor.join(';') : null)
 				: null;
 
 		const updatedUser = await updateUserData({
@@ -146,6 +171,10 @@ export default function ProfilePage() {
 		});
 
 		if (updatedUser) {
+			const finalMajor = profile.type?.toLowerCase() === 'tutor' 
+				? editData.major 
+				: (updatedUser.major ?? profile.major);
+			
 			setProfile((prev) => ({
 				...prev,
 				fullname: updatedUser.name,
@@ -154,14 +183,16 @@ export default function ProfilePage() {
 				mssv: updatedUser.mssv ?? prev.mssv,
 				type: updatedUser.type,
 				description: updatedUser.introduce || '',
-				major: updatedUser.major ?? prev.major,
+				major: finalMajor,
 			}));
 			setEditMode(false);
+			setaddedMajor([]);
 			if (studentMssv) {
 				setMssvEditable(false); // Sau khi lưu thì MSSV không cho sửa nữa
 			}
 		}
 	};
+
 
 	return (
 		<div className="min-h-screen bg-gray-50">
@@ -325,6 +356,12 @@ export default function ProfilePage() {
 													const selected = editData.major ? editData.major.split(';').map(s => s.trim()).filter(Boolean) : [];
 													if (!selected.includes(val) && selected.length < 3) {
 														setEditData(prev => ({ ...prev, major: [...selected, val].join(';') }));
+														const originalCourses = profile.major
+															? profile.major.split(';').map(s => s.trim()).filter(Boolean)
+															: [];
+														if (!originalCourses.includes(val)) {
+															setaddedMajor(prev => [...prev, val]);
+														}
 													}
 												}}
 												className="border border-gray-300 rounded px-2 py-1 w-2/3 text-gray-900"
@@ -347,10 +384,16 @@ export default function ProfilePage() {
 												return (
 													<span key={code} className="inline-flex items-center bg-gray-200 text-gray-800 rounded-full px-3 py-1 text-xs font-medium w-fit">
 														{course ? `${course.id} - ${course.name}` : code}
-														<button type="button" className="ml-2 text-gray-500 hover:text-red-600" onClick={() => {
-															const selected = editData.major.split(';').map(s => s.trim()).filter(Boolean).filter(c => c !== code);
-															setEditData(prev => ({ ...prev, major: selected.join(';') }));
-														}}>&times;</button>
+														<button 
+															type="button" 
+															className="ml-2 text-gray-500 hover:text-red-600 font-bold text-lg" 
+															onClick={() => {
+																const selected = editData.major.split(';').map(s => s.trim()).filter(Boolean).filter(c => c !== code);
+																setEditData(prev => ({ ...prev, major: selected.join(';') }));
+																setaddedMajor(prev => prev.filter(c => c !== code));
+															}}
+															title="Xóa khóa học"
+														>&times;</button>
 													</span>
 												);
 											})}

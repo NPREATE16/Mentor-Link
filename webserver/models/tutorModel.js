@@ -127,7 +127,25 @@ export async function getClassesByTutorId(tutorId) {
     }));
 }
 
-// export async function getFirstClassByTutorId(tutorId) {
-//     const list = await getClassesByTutorId(tutorId);
-//     return list[0] || null;
-// }
+export async function deleteTutorCourseRegistration(userId, courseId) {
+    const [result] = await dbPool.execute(
+        'DELETE FROM `TutorCourseRegistration` WHERE UserID = ? AND CourseID = ? ', 
+        [userId, courseId]
+    ); 
+
+    return result.affectedRows > 0;
+}
+
+export async function deleteMultipleTutorCourseRegistrations(userId, courseIds) {
+    if (!courseIds || courseIds.length === 0) {
+        return true;
+    }
+    
+    const placeholders = courseIds.map(() => '?').join(',');
+    const [result] = await dbPool.execute(
+        `DELETE FROM \`TutorCourseRegistration\` WHERE UserID = ? AND CourseID IN (${placeholders})`, 
+        [userId, ...courseIds]
+    ); 
+
+    return result.affectedRows > 0;
+}

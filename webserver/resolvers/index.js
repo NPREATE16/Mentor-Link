@@ -1,18 +1,12 @@
-import { findUserByEmail, findUserById, createUser, _updateUser, getStudentInfoById, upsertStudentCode, getTutorInfoById, upsertTutorMajor } from '../models/userModel.js';
+import { findUserByEmail, findUserById, createUser, _updateUser, getStudentInfoById, upsertStudentCode, getTutorInfoById, upsertTutorMajor} from '../models/userModel.js';
 import jwt from 'jsonwebtoken';
 import { UserInputError } from 'apollo-server-errors';
 import { deleteOtp, generateOtp, getOtp, getOtpCount, sendEmailOtp, setOtp } from '../MailSender/otpVerify.js';
 import { enrollCourse, getCourse, getRegisteredCourses, getAvailableCourses, cancelEnrollCourse, courseExists, isCourseRegistered } from '../models/courseModel.js';
-import { openClass, updateClass, deleteClass, getClassesByTutorId } from '../models/tutorModel.js';
+import { openClass, updateClass, deleteClass, getClassesByTutorId, deleteTutorCourseRegistration, deleteMultipleTutorCourseRegistrations } from '../models/tutorModel.js';
 const OTP_RATE_LIMIT = 100;
 
-// export function safeCompare(a, b) {
-//     if (a.length !== b.length) return false;
-//     for (let i = 0; i < a.length; i++) {
-//         if (a[i] !== b[i]) return false;
-//     }
-//     return true;
-// }
+
 export const resolvers = {
     Mutation: {
         signup: async (_, { name, email, password, type }) => {
@@ -99,31 +93,30 @@ export const resolvers = {
         },
 
         verifyOtp: async (_, { email, code }) => {  
-            // try {
-            //     const otp = getOtp(email);
-            //     if (!otp) {
-            //         throw new UserInputError('Mã xác thực đã hết hạn');
-            //     }
+            try {
+                const otp = getOtp(email);
+                if (!otp) {
+                    throw new UserInputError('Mã xác thực đã hết hạn');
+                }
 
-            //     const now = Date.now();
-            //     if (now > otp.expire) {
-            //         deleteOtp(email);
-            //         throw new UserInputError('Mã xác thực đã hết hạn');
-            //     }
+                const now = Date.now();
+                if (now > otp.expire) {
+                    deleteOtp(email);
+                    throw new UserInputError('Mã xác thực đã hết hạn');
+                }
 
-            //     if (otp.otp != code) throw new UserInputError('Mã xác thực không chính xác');
+                if (otp.otp != code) throw new UserInputError('Mã xác thực không chính xác');
 
-            //     deleteOtp(email);
-            //     return { success: true }
-            // } catch (err) {
-            //     console.log("verify error", err);
+                deleteOtp(email);
+                return { success: true }
+            } catch (err) {
+                console.log("verify error", err);
 
-            //     if (err instanceof UserInputError) {
-            //         throw err;
-            //     }
-            //     return { success: false }
-            // }
-            return { success: true }
+                if (err instanceof UserInputError) {
+                    throw err;
+                }
+                return { success: false }
+            }
         },
 
         enrollCourse: async (_, { id }, context) => {
@@ -179,13 +172,17 @@ export const resolvers = {
         updateUser: async (_, { id, email, full_name, phone, introduce, mssv, major }) => {
             try {
                 const user = await findUserById(id);
-                if (!user) return null;
+                if (!user) throw new UserInputError("Tài khoản không tồn tại");
                 await _updateUser({ id, email, full_name, phone, introduce });
                 const role = String(user.Role || '').toLowerCase();
                 if (role === 'student' && typeof mssv !== 'undefined') {
                     await upsertStudentCode({ id, studentCode: mssv });
                 } else if (role === 'tutor' && typeof major !== 'undefined') {
-                    await upsertTutorMajor({ id, major });
+                    const courseCodes = String(major ?? '')
+                        .split(';')
+                        .map((code) => code.trim())
+                        .filter(Boolean);
+                    await upsertTutorMajor ({ tutorId: id, courseCodes });
                 }
                 const updatedUser = await findUserById(id);
                 const studentInfo = role === 'student' ? await getStudentInfoById(id) : null;
@@ -244,14 +241,45 @@ export const resolvers = {
                 if (!context.userId) {
                     throw new UserInputError('Vui lòng đăng nhập');
                 }
-                const ok = await deleteClass(classId, context.userId);
-                return ok;
+                const res = await deleteClass(classId, context.userId);
+                return res;
             } catch (err) {
                 console.error('deleteClassError', err);
                 if (err.code === 'NOT_OWNER') {
                     throw new UserInputError('Bạn không có quyền xóa lớp này');
                 }
                 if (err instanceof UserInputError) throw err;
+                return false;
+            }
+        }, 
+
+        deleteTutorCourseRegistration: async (_, {courseId}, context) => {
+            try { 
+                if (!context.userId) throw UserInputError("Vui lòng đăng nhập"); 
+
+                const res = await deleteTutorCourseRegistration(context.userId, courseId);
+                
+                return res;
+
+            } catch (err) { 
+                console.log("deleteTutorCourseRegistration error", err);
+                return false;
+            }
+        },
+
+        deleteMultipleTutorCourseRegistrations: async (_, {courseIds}, context) => {
+            try { 
+                if (!context.userId) throw UserInputError("Vui lòng đăng nhập"); 
+                if (!Array.isArray(courseIds) || courseIds.length === 0) {
+                    return true;
+                }
+
+                const res = await deleteMultipleTutorCourseRegistrations(context.userId, courseIds);
+                
+                return res;
+
+            } catch (err) { 
+                console.log("deleteMultipleTutorCourseRegistrations error", err);
                 return false;
             }
         }
