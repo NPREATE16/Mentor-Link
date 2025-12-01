@@ -32,9 +32,7 @@ function Popup({ title, children, onClose }) {
     <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
       <div className="bg-white p-6 rounded-xl w-[380px] shadow-xl">
         <h2 className="text-2xl font-bold text-center mb-4">{title}</h2>
-
         {children}
-
         <div className="mt-6 flex justify-center">
           <button
             onClick={onClose}
@@ -58,7 +56,7 @@ export default function TutorSchedule() {
   const [selectedDay, setSelectedDay] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
   const [selectedType, setSelectedType] = useState(null);
-  const [room, setRoom] = useState(""); // phòng học (chỉ khi offline)
+  const [room, setRoom] = useState(""); 
 
   /* POPUP STATES */
   const [showRegisterPopup, setShowRegisterPopup] = useState(false);
@@ -69,16 +67,26 @@ export default function TutorSchedule() {
   const [deleteItem, setDeleteItem] = useState(null);
 
   /* ---------------------------------------------------------------------- */
-  /* ĐĂNG KÝ LỊCH                              */
+  /* LOGIC BỔ TRỢ (VALIDATION)                   */
   /* ---------------------------------------------------------------------- */
 
-  const openRegisterPopup = () => {
-    setSelectedDay(null);
-    setSelectedTime(null);
-    setSelectedType(null);
-    setRoom("");
-    setShowRegisterPopup(true);
+  // Hàm check trùng lịch
+  const isScheduleConflict = (newDay, newTime, excludeId = null) => {
+    return schedules.some((s) => {
+      if (excludeId && s.id === excludeId) return false;
+      return s.day === newDay && s.time === newTime;
+    });
   };
+
+  // Hàm check định dạng phòng: Chữ Hoa + Số + Gạch ngang + 3 số (VD: A4-508)
+  const isValidRoomFormat = (roomStr) => {
+    const regex = /^[A-Z]\d-\d{3}$/;
+    return regex.test(roomStr);
+  };
+
+  /* ---------------------------------------------------------------------- */
+  /* LOAD DATA                                  */
+  /* ---------------------------------------------------------------------- */
 
   const mapClassToSchedule = (c) => {
     const toTimeLabel = (hhmm) => {
@@ -125,22 +133,36 @@ export default function TutorSchedule() {
     return { start: s, end: e };
   };
 
-  // --- HÀM KIỂM TRA TRÙNG LỊCH (MỚI THÊM) ---
-  const isScheduleConflict = (newDay, newTime, excludeId = null) => {
-    return schedules.some((s) => {
-      // Nếu đang sửa, bỏ qua chính item đó
-      if (excludeId && s.id === excludeId) return false;
-      // Kiểm tra trùng Ngày và Giờ
-      return s.day === newDay && s.time === newTime;
-    });
+  /* ---------------------------------------------------------------------- */
+  /* ĐĂNG KÝ                                   */
+  /* ---------------------------------------------------------------------- */
+
+  const openRegisterPopup = () => {
+    setSelectedDay(null);
+    setSelectedTime(null);
+    setSelectedType(null);
+    setRoom("");
+    setShowRegisterPopup(true);
   };
 
   const handleRegister = async () => {
     if (!selectedDay || !selectedTime || !selectedType) return;
 
-    // --- KIỂM TRA TRÙNG TRƯỚC KHI LƯU ---
+    // 1. Check định dạng phòng nếu là Offline
+    if (selectedType === "Offline") {
+      if (!room) {
+        alert("Vui lòng nhập số phòng!");
+        return;
+      }
+      if (!isValidRoomFormat(room)) {
+        alert("Tên phòng sai định dạng! Vui lòng nhập đúng mẫu: A4-508 (Chữ in hoa + Số - 3 Chữ số)");
+        return;
+      }
+    }
+
+    // 2. Check trùng lịch
     if (isScheduleConflict(selectedDay, selectedTime)) {
-      alert("Lịch này đã tồn tại, vui lòng chọn khung khác");
+      alert("Lịch dạy này bị trùng! Bạn đã đăng ký khung giờ này rồi.");
       return;
     }
 
@@ -156,16 +178,12 @@ export default function TutorSchedule() {
       const { start, end } = parseTimeRange(selectedTime);
       const methodValue = selectedType === "Offline" && room ? `Offline-${room}` : selectedType;
       const created = await openClass({ start, end, day: selectedDay, method: methodValue });
-      const mapped = {
-        ...newItem,
-        id: created?.id || newItem.id,
-      };
+      const mapped = { ...newItem, id: created?.id || newItem.id };
       setSchedules([...schedules, mapped]);
       setShowRegisterPopup(false);
       setShowSuccessPopup(true);
-      return;
     } catch (err) {
-      console.error("Tạo lịch không thành công", err);
+      console.error("Tạo lịch thất bại", err);
       setSchedules([...schedules, newItem]);
       setShowRegisterPopup(false);
       setShowSuccessPopup(true);
@@ -173,7 +191,7 @@ export default function TutorSchedule() {
   };
 
   /* ---------------------------------------------------------------------- */
-  /* SỬA                                   */
+  /* SỬA                                     */
   /* ---------------------------------------------------------------------- */
 
   const openEditPopup = (item) => {
@@ -186,7 +204,19 @@ export default function TutorSchedule() {
   };
 
   const handleEdit = async () => {
-    // --- KIỂM TRA TRÙNG KHI SỬA ---
+    // 1. Check định dạng phòng nếu là Offline
+    if (selectedType === "Offline") {
+      if (!room) {
+        alert("Vui lòng nhập số phòng!");
+        return;
+      }
+      if (!isValidRoomFormat(room)) {
+        alert("Tên phòng sai định dạng! Vui lòng nhập đúng mẫu: A4-508");
+        return;
+      }
+    }
+
+    // 2. Check trùng lịch
     if (isScheduleConflict(selectedDay, selectedTime, editingItem.id)) {
       alert("Lịch dạy này bị trùng với một lịch khác đã có!");
       return;
@@ -209,13 +239,13 @@ export default function TutorSchedule() {
       const methodValue = selectedType === "Offline" && room ? `Offline-${room}` : selectedType;
       await updateClass({ classId: editingItem.id, start, end, day: selectedDay, method: methodValue });
     } catch (err) {
-      console.error("Cập nhật lịch không thành công", err);
+      console.error("Cập nhật thất bại", err);
     }
     setShowEditPopup(false);
   };
 
   /* ---------------------------------------------------------------------- */
-  /* XOÁ                                   */
+  /* XOÁ                                     */
   /* ---------------------------------------------------------------------- */
 
   const openDeletePopup = (item) => {
@@ -228,13 +258,13 @@ export default function TutorSchedule() {
     try {
       await deleteClass({ classId: deleteItem.id });
     } catch (err) {
-      console.error("Xóa lịch không thành công", err);
+      console.error("Xóa thất bại", err);
     }
     setShowDeletePopup(false);
   };
 
   /* ---------------------------------------------------------------------- */
-  /* RENDER                                  */
+  /* RENDER                                    */
   /* ---------------------------------------------------------------------- */
 
   return (
@@ -274,20 +304,11 @@ export default function TutorSchedule() {
               key={item.id}
               className="grid grid-cols-4 items-center px-4 py-3 mb-3"
             >
+              <span className="px-4 py-2 bg-gray-100 rounded-lg text-center">{item.day}</span>
+              <span className="px-4 py-2 bg-gray-100 rounded-lg text-center">{item.time}</span>
               <span className="px-4 py-2 bg-gray-100 rounded-lg text-center">
-                {item.day}
+                {item.type === "Offline" ? `${item.type} (${item.room})` : item.type}
               </span>
-
-              <span className="px-4 py-2 bg-gray-100 rounded-lg text-center">
-                {item.time}
-              </span>
-
-              <span className="px-4 py-2 bg-gray-100 rounded-lg text-center">
-                {item.type === "Offline"
-                  ? `${item.type} (Phòng ${item.room})`
-                  : item.type}
-              </span>
-
               <div className="flex gap-3 justify-center">
                 <button
                   onClick={() => openEditPopup(item)}
@@ -322,7 +343,7 @@ export default function TutorSchedule() {
       {/* ------------------------------------------------------------------ */}
       {showRegisterPopup && (
         <Popup title="Đăng ký lịch dạy" onClose={() => setShowRegisterPopup(false)}>
-          {/* Chọn ngày */}
+          {/* Day Options */}
           <p className="font-semibold mb-2">Chọn ngày:</p>
           <div className="grid grid-cols-3 gap-2 mb-4">
             {DAY_OPTIONS.map((d) => (
@@ -330,9 +351,7 @@ export default function TutorSchedule() {
                 key={d.id}
                 onClick={() => setSelectedDay(d.label)}
                 className={`px-3 py-2 rounded-lg border ${
-                  selectedDay === d.label
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-100"
+                  selectedDay === d.label ? "bg-blue-500 text-white" : "bg-gray-100"
                 }`}
               >
                 {d.label}
@@ -340,7 +359,7 @@ export default function TutorSchedule() {
             ))}
           </div>
 
-          {/* Chọn giờ */}
+          {/* Time Options */}
           <p className="font-semibold mb-2">Chọn giờ:</p>
           <div className="grid grid-cols-3 gap-2 mb-4">
             {TIME_OPTIONS.map((t) => (
@@ -348,9 +367,7 @@ export default function TutorSchedule() {
                 key={t}
                 onClick={() => setSelectedTime(t)}
                 className={`px-3 py-2 rounded-lg border ${
-                  selectedTime === t
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-100"
+                  selectedTime === t ? "bg-blue-500 text-white" : "bg-gray-100"
                 }`}
               >
                 {t}
@@ -358,7 +375,7 @@ export default function TutorSchedule() {
             ))}
           </div>
 
-          {/* Hình thức */}
+          {/* Type Options */}
           <p className="font-semibold mb-2">Hình thức:</p>
           <div className="grid grid-cols-2 gap-2 mb-4">
             {TYPE_OPTIONS.map((type) => (
@@ -366,9 +383,7 @@ export default function TutorSchedule() {
                 key={type}
                 onClick={() => setSelectedType(type)}
                 className={`px-3 py-2 rounded-lg border ${
-                  selectedType === type
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-100"
+                  selectedType === type ? "bg-blue-500 text-white" : "bg-gray-100"
                 }`}
               >
                 {type}
@@ -376,17 +391,19 @@ export default function TutorSchedule() {
             ))}
           </div>
 
-          {/* Nhập phòng nếu Offline */}
+          {/* Room Input (Check Offline) */}
           {selectedType === "Offline" && (
             <div className="mb-4">
               <p className="font-semibold mb-1">Phòng:</p>
               <input
                 type="text"
                 value={room}
-                onChange={(e) => setRoom(e.target.value)}
-                placeholder="Nhập số phòng"
+                // Tự động viết hoa
+                onChange={(e) => setRoom(e.target.value.toUpperCase())}
+                placeholder="VD: A4-508"
                 className="w-full px-3 py-2 border rounded-lg bg-gray-100"
               />
+              <p className="text-xs text-gray-500 mt-1">VD đúng: A4-508, B8-203</p>
             </div>
           )}
 
@@ -404,7 +421,7 @@ export default function TutorSchedule() {
       {/* ------------------------------------------------------------------ */}
       {showEditPopup && (
         <Popup title="Chỉnh sửa lịch dạy" onClose={() => setShowEditPopup(false)}>
-          {/* DAY */}
+          {/* Day */}
           <p className="font-semibold mb-2">Chọn ngày:</p>
           <div className="grid grid-cols-3 gap-2 mb-4">
             {DAY_OPTIONS.map((d) => (
@@ -412,9 +429,7 @@ export default function TutorSchedule() {
                 key={d.id}
                 onClick={() => setSelectedDay(d.label)}
                 className={`px-3 py-2 rounded-lg border ${
-                  selectedDay === d.label
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-100"
+                  selectedDay === d.label ? "bg-blue-500 text-white" : "bg-gray-100"
                 }`}
               >
                 {d.label}
@@ -422,7 +437,7 @@ export default function TutorSchedule() {
             ))}
           </div>
 
-          {/* TIME */}
+          {/* Time */}
           <p className="font-semibold mb-2">Chọn giờ:</p>
           <div className="grid grid-cols-3 gap-2 mb-4">
             {TIME_OPTIONS.map((t) => (
@@ -430,9 +445,7 @@ export default function TutorSchedule() {
                 key={t}
                 onClick={() => setSelectedTime(t)}
                 className={`px-3 py-2 rounded-lg border ${
-                  selectedTime === t
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-100"
+                  selectedTime === t ? "bg-blue-500 text-white" : "bg-gray-100"
                 }`}
               >
                 {t}
@@ -440,7 +453,7 @@ export default function TutorSchedule() {
             ))}
           </div>
 
-          {/* TYPE */}
+          {/* Type */}
           <p className="font-semibold mb-2">Hình thức:</p>
           <div className="grid grid-cols-2 gap-2 mb-4">
             {TYPE_OPTIONS.map((type) => (
@@ -448,9 +461,7 @@ export default function TutorSchedule() {
                 key={type}
                 onClick={() => setSelectedType(type)}
                 className={`px-3 py-2 rounded-lg border ${
-                  selectedType === type
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-100"
+                  selectedType === type ? "bg-blue-500 text-white" : "bg-gray-100"
                 }`}
               >
                 {type}
@@ -458,17 +469,18 @@ export default function TutorSchedule() {
             ))}
           </div>
 
-          {/* ROOM WHEN OFFLINE */}
+          {/* Room Input (Check Offline) */}
           {selectedType === "Offline" && (
             <div className="mb-4">
               <p className="font-semibold mb-1">Phòng:</p>
               <input
                 type="text"
                 value={room}
-                onChange={(e) => setRoom(e.target.value)}
-                placeholder="Nhập số phòng"
+                onChange={(e) => setRoom(e.target.value.toUpperCase())}
+                placeholder="VD: A4-508"
                 className="w-full px-3 py-2 border rounded-lg bg-gray-100"
               />
+              <p className="text-xs text-gray-500 mt-1">VD đúng: A4-508, B8-203</p>
             </div>
           )}
 
@@ -482,12 +494,11 @@ export default function TutorSchedule() {
       )}
 
       {/* ------------------------------------------------------------------ */}
-      {/* POPUP: Xóa lịch */}
+      {/* POPUP: Xóa / Thành công */}
       {/* ------------------------------------------------------------------ */}
       {showDeletePopup && (
         <Popup title="Xóa lịch" onClose={() => setShowDeletePopup(false)}>
           <p className="text-center mb-4">Bạn muốn xóa lịch này?</p>
-
           <div className="flex justify-center gap-4">
             <button
               onClick={handleDelete}
@@ -495,7 +506,6 @@ export default function TutorSchedule() {
             >
               Xóa
             </button>
-
             <button
               onClick={() => setShowDeletePopup(false)}
               className="px-4 py-2 bg-gray-300 rounded-lg"
@@ -506,15 +516,9 @@ export default function TutorSchedule() {
         </Popup>
       )}
 
-      {/* ------------------------------------------------------------------ */}
-      {/* POPUP: Đăng ký thành công */}
-      {/* ------------------------------------------------------------------ */}
       {showSuccessPopup && (
-        <Popup
-          title="Đăng ký thành công"
-          onClose={() => setShowSuccessPopup(false)}
-        >
-          <p className="text-center">Lịch dạy đã được cập nhật.</p>
+        <Popup title="Thành công" onClose={() => setShowSuccessPopup(false)}>
+          <p className="text-center">Cập nhật lịch thành công.</p>
         </Popup>
       )}
     </div>
