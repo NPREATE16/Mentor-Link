@@ -55,6 +55,7 @@ export const fetchUserData = async (email) => {
                 introduce
                 mssv
                 major
+                faculty
             }
         }
     `;
@@ -79,7 +80,6 @@ export const Signin = async (email, password) => {
                 phone
                 name
                 type
-                introduce
                 }
             }
         }
@@ -132,36 +132,39 @@ export const verifyOtp = async (email, code) => {
 }
 
 export const updateUserData = async (userData) => {
-  const query = `
-    mutation UpdateUser(
-      $id: ID!
-      $email: String!
-      $full_name: String
-      $phone: String
-      $introduce: String
-      $mssv: String
-      $major: String
-    ) {
-      updateUser(
-        id: $id
-        email: $email
-        full_name: $full_name
-        phone: $phone
-        introduce: $introduce
-        mssv: $mssv
-        major: $major
-      ) {
-        id
-        name
-        email
-        phone
-        introduce
-        mssv
-        major
-        type
-      }
-    }
-  `;
+    const query = `
+        mutation UpdateUser(
+            $id: ID!
+            $email: String!
+            $full_name: String
+            $phone: String
+            $introduce: String
+            $mssv: String
+            $major: String
+            $faculty: String
+        ) {
+            updateUser(
+                id: $id
+                email: $email
+                full_name: $full_name
+                phone: $phone
+                introduce: $introduce
+                mssv: $mssv
+                major: $major
+                faculty: $faculty
+            ) {
+                id
+                name
+                email
+                phone
+                type
+                introduce
+                mssv
+                major
+                faculty
+            }
+        }
+    `;
 
     const data = await graphQLRequest({
         query,

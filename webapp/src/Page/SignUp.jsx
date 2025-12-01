@@ -89,8 +89,9 @@ export default function SignUp() {
 
   const onSubmit = async (data) => {
     try {
-      const res = findUser(data.email);
-      if (!res) {
+      const res = await findUser(data.email);
+      console.log("res", res);
+      if (res) {
         setServerMessage({ type: 'error', text: 'Tài khoản đã tồn tại' });
         return;
       }

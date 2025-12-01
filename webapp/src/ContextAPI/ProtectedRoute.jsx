@@ -11,5 +11,9 @@ export default function ProtectedRoute({ children }) {
         return <Navigate to='/SignInPage' replace />;
     }
 
+    if (!localStorage.getItem(`token`)) {
+        return <Navigate to='/SignInPage' replace />;
+    }
+
     return children;
 }

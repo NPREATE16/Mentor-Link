@@ -25,6 +25,7 @@ export const resolvers = {
                 type,
                 mssv: null,
                 major: null,
+                faculty: null,
             };
 
             const payload = { id: insertId, email: email, type: type, name: name };
@@ -72,6 +73,7 @@ export const resolvers = {
                     email: user.Email,
                     mssv: studentCode,
                     major: tutorMajor,
+                    faculty: user.Faculty || ""
                 }
             };
         },
@@ -172,11 +174,11 @@ export const resolvers = {
             }
         },
 
-        updateUser: async (_, { id, email, full_name, phone, introduce, mssv, major }) => {
+        updateUser: async (_, { id, email, full_name, phone, introduce, mssv, major, faculty }) => {
             try {
                 const user = await findUserById(id);
                 if (!user) throw new UserInputError("Tài khoản không tồn tại");
-                await _updateUser({ id, email, full_name, phone, introduce });
+                await _updateUser({ id, email, full_name, phone, introduce, faculty });
                 const role = String(user.Role || '').toLowerCase();
                 if (role === 'student' && typeof mssv !== 'undefined') {
                     await upsertStudentCode({ id, studentCode: mssv });
@@ -199,6 +201,7 @@ export const resolvers = {
                     introduce: updatedUser.Introduce,
                     mssv: studentInfo?.StudentCode || null,
                     major: tutorInfo?.Major || null,
+                    faculty: updatedUser.Faculty || null,
                 };
             }
             catch (err) {
@@ -412,6 +415,7 @@ export const resolvers = {
                     introduce: user.Introduce || "",
                     mssv: studentInfo?.StudentCode || null,
                     major: tutorInfo?.Major || null,
+                    faculty: user.Faculty || ""
                 };
             } catch (err) {
                 console.error('getUserByEmail error:', err);

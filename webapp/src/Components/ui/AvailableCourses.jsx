@@ -1,5 +1,16 @@
 // src/Components/AvailableCourses.jsx
-export default function AvailableCourses({ available, search, handleRegister }) {
+export default function AvailableCourses({ available = [], search = '', handleRegister }) {
+  const normalize = (s) =>
+    String(s || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/Đ/g, 'D')
+      .toLowerCase()
+      .trim();
+
+  const q = normalize(search);
+
   return (
     <div className="bg-white p-8 rounded-3xl shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
       <h2 className="text-3xl font-bold text-center mt-8 mb-3 text-gray-900">
@@ -8,7 +19,12 @@ export default function AvailableCourses({ available, search, handleRegister }) 
 
       <div className="flex flex-col gap-5">
         {available
-          .filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
+          .filter((c) => {
+            if (!q) return true;
+            const name = normalize(c.name);
+            const faculty = normalize(c.faculty);
+            return name.includes(q) || faculty.includes(q) || String(c.id || '').toLowerCase().includes(q);
+          })
           .map((course) => (
             <div
               key={course.id}

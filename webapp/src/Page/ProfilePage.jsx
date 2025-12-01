@@ -29,7 +29,7 @@ export default function ProfilePage() {
 		fullname: "-", // async => update later.
 		email: user.email,
 		phone: user.phone,
-		faculty: 'KHOA KHOA HỌC VÀ KỸ THUẬT MÁY ΤÍΝΗ',
+		faculty: user.faculty || '',
 		major: user.major || '',
 		description: '',
 		type: user.type,
@@ -54,6 +54,7 @@ export default function ProfilePage() {
 					description: user_data.introduce || "",
 					mssv: user_data.mssv || "",
 					major: user_data.major || "",
+					faculty: user_data.faculty || ""
 				};
 				setProfile((prev) => ({ ...prev, ...data }));
 				setEditData((prev) => ({ ...prev, ...data }));
@@ -168,6 +169,7 @@ export default function ProfilePage() {
 			introduce: editData.description,
 			mssv: studentMssv,
 			major: tutorMajor,
+			faculty: editData.faculty,
 		});
 
 		if (updatedUser) {
@@ -184,6 +186,7 @@ export default function ProfilePage() {
 				type: updatedUser.type,
 				description: updatedUser.introduce || '',
 				major: finalMajor,
+				faculty: updatedUser.faculty ?? prev.faculty,
 			}));
 			setEditMode(false);
 			setaddedMajor([]);
@@ -238,7 +241,7 @@ export default function ProfilePage() {
 									</div>
 									<div className="flex justify-between items-center">
 										<span className="text-gray-500 font-medium">Khoa</span>
-										<span className="font-semibold text-gray-900">{profile.faculty}</span>
+										<span className="font-semibold text-gray-900">{profile.faculty ||  <span className='italic text-gray-400'>Chưa cập nhật</span>}</span>
 									</div>
 									{ (profile.type === 'tutor' || profile.type === 'Tutor') && (
 										<div className="flex justify-between items-center">

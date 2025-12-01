@@ -26,14 +26,15 @@ export async function createUser({ name, email, password, role }) {
   return ID;
 }
 
-export async function _updateUser({ id, email, full_name, phone, introduce }) {
+export async function _updateUser({ id, email, full_name, phone, introduce, faculty }) {
   const [result] = await dbPool.execute(
-    `UPDATE User SET Email = ?, FullName = ?, Phone = ?, Introduce = ? WHERE UserID = ?`,
+    `UPDATE User SET Email = ?, FullName = ?, Phone = ?, Introduce = ?, Faculty = ? WHERE UserID = ?`,
     [
       email ?? "",
       full_name ?? "-",
       phone ?? null, // undefined can't be used
       introduce ?? "Chưa cập nhật",
+      faculty ?? null,
       id
     ]
   );

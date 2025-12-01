@@ -8,6 +8,7 @@ export const typeDefs = `#graphql
     introduce: String 
     mssv: String
     major: String
+    faculty: String
   }
 
   type AuthPayload {
@@ -77,6 +78,7 @@ export const typeDefs = `#graphql
       introduce: String
       mssv: String
       major: String
+      faculty: String
     ): User
     openClass(start: String!, end: String!, day: String!, method: String!): Class!
     deleteClass(classId: ID!): Boolean!
